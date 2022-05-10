@@ -25,13 +25,12 @@ Analysis Geo 880**
 ## Results / products
 <!-- What do you expect, anticipate? -->
 - We expect that we can at least to some extent identify core territories. Given that, we further expect that these territories differ in size between the resting sites (the forest patch) and the feeding grounds (agricultural sites). 
-- Further, we expect to observe changes in the trajectory of an Individual that intrudes the territory of another Individual, after they have met in close proximity. However, we expect this behaviour to be relaxed in the ressource rich feeding grounds, compared to the smaller forest patch, where they rest & sleep.
-- In the feeding grounds, we anticipate to identify individually preferred feeding grounds, with which we can further narrow down the territory of an Individual.
-- 
+- Further, we expect to observe changes in the trajectory of an Individual that intrudes the territory of another Individual, after they have met in close proximity. However, we expect this behaviour to be relaxed in the ressource rich feeding grounds, compared to the smaller forest patch, where they rest & sleep. 
+- Another observation may be, that Individuals avoid each other more in a temporal manner, instead of spatially, in the feeding grounds.
 
 ## Data
 - We will use the provided Wild Boar data. 
-- Additionally, we might include agricultural land use data, provided by the canton of Bern.
+- Additionally, we might include agricultural land use data, provided by the canton of Bern and Forest Data form "geo.admin".
 
 ## Analytical concepts
 <!-- Which analytical concepts will you use? What conceptual movement spaces and respective modelling approaches of trajectories will you be using? What additional spatial analysis methods will you be using? -->
