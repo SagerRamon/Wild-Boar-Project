@@ -6,30 +6,58 @@ Analysis Geo 880**
 | Semester:      | FS22                              |
 |----------------|---------------------------------- |
 | **Data:**      | Wild Boar Movement Data           |
-| **Title:**     | The title of your project         |
-| **Student 1:** | Name of Student 1                 |
+| **Title:**     | Territorial Analysis of Wild Boar Trajectory Data  |
+| **Student 1:** | Ramon Sager                       |
 | **Student 2:** | Silvia Juen                       |
 
 ## Abstract 
 <!-- (50-60 words) -->
+- Since Wild Boar show at least to some extent (habitat dependent) territoriality, we want to find out, if we can, based on the given data, identify (core) territories of the tracked Individuals and territorial behaviours among these individuals....
 
 ## Research Questions
-<!-- (50-60 words) -->
+- Can we identify (core) territories of individual Wild Boar in their resting/sleeping sites and feeding grounds?
+- Can we assess territorial behaviour among Wild Boar at the edges of these territories based on trajectoy data?  
+    - i.e. may there be a relaxation in one habitat compared to the other?
+    - Can we detect a change in the trajectory of the "intruder" after a spatio-temporal meet up between two Individuals?
+    - Or do individuals temporaly avoid conspesifics, but still use the same territories in the feeding grounds.
+- Can we identify feeding occasions based on these data (focusing on the agricultural sites), and therefore further localise feeding territories?
 
 ## Results / products
 <!-- What do you expect, anticipate? -->
+- We expect that we can at least to some extent identify core territories. Given that, we further expect that these territories differ in size between the resting sites (the forest patch) and the feeding grounds (agricultural sites). 
+- Further, we expect to observe changes in the trajectory of an Individual that intrudes the territory of another Individual, after they have met in close proximity. However, we expect this behaviour to be relaxed in the ressource rich feeding grounds, compared to the smaller forest patch, where they rest & sleep.
+- In the feeding grounds, we anticipate to identify individually preferred feeding grounds, with which we can further narrow down the territory of an Individual.
+- 
 
 ## Data
-<!-- What data will you use? Will you require additional context data? Where do you get this data from? Do you already have all the data? -->
+- We will use the provided Wild Boar data. 
+- Additionally, we might include agricultural land use data, provided by the canton of Bern.
 
 ## Analytical concepts
 <!-- Which analytical concepts will you use? What conceptual movement spaces and respective modelling approaches of trajectories will you be using? What additional spatial analysis methods will you be using? -->
 
+- Kernel Density Estimation
+- Deriving Movement Parameters
+- Temporal Matching
+-
+-
+-
+-
+
 ## R concepts
 <!-- Which R concepts, functions, packages will you mainly use. What additional spatial analysis methods will you be using? -->
 
+
+Packages (from what we know so far):
+readr        # to import tabular data (e.g. csv)
+dplyr        # to manipulate (tabular) data
+ggplot2      # to visualize data
+sf           # to handle spatial vector data
+terra        # To handle raster data
+lubridate    # To handle dates and times
+
 ## Risk analysis
 <!-- What could be the biggest challenges/problems you might face? What is your plan B? -->
-
+- The temporal resolution of the sampling might be not enough to identify specific behaviours (as territorial behaviour)
 ## Questions? 
 <!-- Which questions would you like to discuss at the coaching session? -->
