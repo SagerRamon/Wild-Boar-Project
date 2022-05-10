@@ -48,12 +48,12 @@ Analysis Geo 880**
 
 
 ### Packages (from what we know so far):
-- readr        ¦# to import tabular data (e.g. csv)
-- dplyr        ¦# to manipulate (tabular) data
-- ggplot2      ¦# to visualize data
-- sf           ¦# to handle spatial vector data
-- terra        ¦# To handle raster data
-- lubridate    ¦# To handle dates and times
+- readr        # to import tabular data (e.g. csv)
+- dplyr        # to manipulate (tabular) data
+- ggplot2      # to visualize data
+- sf           # to handle spatial vector data
+- terra        # To handle raster data
+- lubridate    # To handle dates and times
 
 ## Risk analysis
 <!-- What could be the biggest challenges/problems you might face? What is your plan B? -->
