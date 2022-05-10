@@ -35,10 +35,10 @@ Analysis Geo 880**
 ## Analytical concepts
 <!-- Which analytical concepts will you use? What conceptual movement spaces and respective modelling approaches of trajectories will you be using? What additional spatial analysis methods will you be using? -->
 
-- Kernel Density Estimation
+- Kernel Density Estimation / Convex Hull
 - Deriving Movement Parameters
 - Temporal Matching
--
+- 
 -
 -
 -
