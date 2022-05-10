@@ -18,9 +18,9 @@ Analysis Geo 880**
 - Can we identify (core) territories of individual Wild Boar in their resting/sleeping sites and feeding grounds?
 - Can we assess territorial behaviour among Wild Boar at the edges of these territories based on trajectoy data?  
     - i.e. may there be a relaxation in one habitat compared to the other?
-    - Can we detect a change in the trajectory of the "intruder" after a spatio-temporal meet up between two Individuals?
+ - Can we detect a change in the trajectory of the "intruder" after a spatio-temporal meet up between two Individuals?
     - Or do individuals temporaly avoid conspesifics, but still use the same territories in the feeding grounds.
-- Can we identify feeding occasions based on these data (focusing on the agricultural sites), and therefore further localise feeding territories?
+
 
 ## Results / products
 <!-- What do you expect, anticipate? -->
@@ -48,16 +48,21 @@ Analysis Geo 880**
 <!-- Which R concepts, functions, packages will you mainly use. What additional spatial analysis methods will you be using? -->
 
 
-Packages (from what we know so far):
-readr        # to import tabular data (e.g. csv)
-dplyr        # to manipulate (tabular) data
-ggplot2      # to visualize data
-sf           # to handle spatial vector data
-terra        # To handle raster data
-lubridate    # To handle dates and times
+- Packages (from what we know so far):
+- readr        # to import tabular data (e.g. csv)
+- dplyr        # to manipulate (tabular) data
+- ggplot2      # to visualize data
+- sf           # to handle spatial vector data
+- terra        # To handle raster data
+- lubridate    # To handle dates and times
 
 ## Risk analysis
 <!-- What could be the biggest challenges/problems you might face? What is your plan B? -->
 - The temporal resolution of the sampling might be not enough to identify specific behaviours (as territorial behaviour)
+
+### Plan B
+- Can we identify feeding occasions based on these data (focusing on the agricultural sites), and therefore further localise feeding territories?
+
+
 ## Questions? 
 <!-- Which questions would you like to discuss at the coaching session? -->
