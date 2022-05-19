@@ -1,0 +1,33 @@
+---
+title: "EDA - Wild Boar Data"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
