@@ -1,5 +1,5 @@
 ---
-title: "EDA - Wild Boar Data"
+title: "EDA - Wild Boar forest project"
 output: html_document
 date: "`r Sys.Date()`"
 editor_options: 
