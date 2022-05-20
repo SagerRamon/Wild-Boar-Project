@@ -8,10 +8,19 @@ editor_options:
 
 ```{r, warning=F, message=F}
 rm(list = ls())
+```
+
+
+```{r, warning=F, message=F}
 library(ComputationalMovementAnalysisData)
 library(tidyverse)
+library(sf)
+```
 
+
+```{r, warning=F, message=F}
 ws <- wildschwein_BE
+metadata <- wildschwein_metadata
 ```
 
 ```{r}
@@ -82,10 +91,10 @@ ws_range2 %>%
 - most sampling intervals are between 10 & 20 minutes
 
 ```{r}
-# ws_range3 <- ws %>% filter(timelag >= 0 & timelag < 500)
-ws_range3 <- ws %>% filter(timelag >= 50 & timelag < 70)
+# ws_60s <- ws %>% filter(timelag >= 0 & timelag < 500)
+ws_60s <- ws %>% filter(timelag >= 50 & timelag < 70)
 
-ws_range3 %>% 
+ws_60s %>% 
   ggplot(aes(x = timelag)) +
   geom_histogram(binwidth = 1) +
   scale_y_log10()
@@ -93,9 +102,9 @@ ws_range3 %>%
 ```
 -> around 30000 sampling intervals are within 1 minute
 ```{r}
-ws_range3 <- ws_range3 %>% filter(DatetimeUTC > "2015-01-01" & DatetimeUTC < "2016-01-01")
+ws_60s <- ws_60s %>% filter(DatetimeUTC > "2015-01-01" & DatetimeUTC < "2016-01-01")
 
-p3 <- ws_range3 %>% ggplot(aes(x = DatetimeUTC, y = TierID, colour = TierID)) +
+p3 <- ws_60s %>% ggplot(aes(x = DatetimeUTC, y = TierID, colour = TierID)) +
   geom_point(show.legend = F)
 
 p3
@@ -104,17 +113,38 @@ p3
 --> Animal ID's c(10, 22, 36, 40, 48) have smapling interval's of one minute in overlapping times in the year 2015
 
 
-
-
---------------------------------------------------------------------------------
-
-
 ```{r}
+ws_names <- unique(ws_60s$TierName)
+
 
 ```
 
 
 
+--------------------------------------------------------------------------------
+
+# Pre-Analysis of Location
+
+```{r}
+sf_60s <- st_as_sf(ws_range3, coords = c("N","E"), crs = 2056)
+
+sf_60s_grouped <- group_by(sf_60s, TierID)
+```
+
+## MCP
+
+```{r}
+sf_60s_smry <- summarise(sf_60s_grouped)
+mcp <- st_convex_hull(sf_60s_smry)
+```
+
+```{r}
+ggplot(mcp, ) + 
+    aes(fill = TierID, alpha = 0.5) +
+    geom_sf() +
+    coord_sf(datum = sf::st_crs(2056))
+```
+--> Territoriality sex biased in wild boar?
 
 
 
