@@ -240,19 +240,22 @@ ggplot() +
 
 
 
+```{r}
+# 5 minutes sampling interval
+ws_5min <- ws_range %>% filter(timelag >= 590 & timelag < 610)
+```
+
+```{r}
+# During the relevant and overlapping time
+ws_5min <- ws_5min %>% filter(DatetimeUTC > "2015-01-01" & DatetimeUTC < "2016-01-01")
 
 
+# Plot with the 5 overlapping individuals
+p5 <- ws_5min %>% ggplot(aes(x = DatetimeUTC, y = TierID, colour = TierID)) +
+  geom_point(show.legend = F)
 
+p5
 
-
-
-
-
-
-
-
-
-
-
+```
 
 
