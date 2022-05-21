@@ -3,7 +3,7 @@ title: "EDA - Wild Boar forest project"
 output: html_document
 date: "`r Sys.Date()`"
 editor_options: 
-  chunk_output_type: inline
+  chunk_output_type: console
 ---
 
 ```{r, warning=F, message=F}
@@ -128,7 +128,7 @@ ws_names <- unique(ws_60s$TierName)
 # Pre-Analysis of Location
 
 ```{r}
-sf_60s <- st_as_sf(ws_range3, coords = c("N","E"), crs = 2056)
+sf_60s <- st_as_sf(ws_60s, coords = c("N","E"), crs = 2056)
 
 sf_60s_grouped <- group_by(sf_60s, TierID)
 ```
@@ -148,6 +148,16 @@ ggplot(mcp, ) +
 ```
 --> Territoriality sex biased in wild boar?
 
+```{r}
+grid <- st_make_grid(sf_60s, square = F, cellsize = 1000)
+
+grid_agg <- aggregate(sf_60s, grid, FUN = length) %>% select(TierID)
+
+
+ggplot(grid_agg, aes(fill = TierID)) + geom_sf() + geom_sf(data = sf_60s, inherit.aes = FALSE)
+
+
+```
 
 
 

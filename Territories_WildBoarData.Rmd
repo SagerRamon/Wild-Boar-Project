@@ -1,0 +1,103 @@
+---
+title: "Territories"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+# Can we identify (core) territories of individual Wild Boar in their resting/sleeping sites and feeding grounds?
+
+We expect that we can at least to some extent identify core territories. Given that, we further expect that these territories differ in size between the resting sites (the forest patch) and the feeding grounds (agricultural sites).
+
+
+```{r, warning=F, message=F}
+rm(list = ls())
+```
+
+```{r, warning=F, message=F}
+library(ComputationalMovementAnalysisData)
+library(tidyverse)
+library(sf)
+```
+
+```{r, warning=F, message=F}
+ws <- wildschwein_BE
+metadata <- wildschwein_metadata
+```
+
+```{r}
+names(ws)
+names(metadata)
+n_distinct(ws$TierID)
+n_distinct(ws$CollarID)
+```
+
+```{r}
+ws2 <- merge(ws, metadata[, c("","")]
+
+  
+  
+ws$location <- ws
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
