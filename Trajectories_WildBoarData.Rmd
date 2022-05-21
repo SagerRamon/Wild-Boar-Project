@@ -24,6 +24,7 @@ library(ggpubr)
 ```{r, warning=F, message=F}
 ws <- wildschwein_BE
 metadata <- wildschwein_metadata
+metadata
 ```
 
 
@@ -45,6 +46,15 @@ ws$TierID <- as.factor(ws$TierID)
 ws_range <- ws %>% 
   filter(timelag >= 0 & timelag < 30000) %>% 
   subset(select = - c(day, CollarID, moonilumination))
+```
+
+```{r}
+ws$TierID <- as.factor(ws$TierID)
+
+p1 <- ws %>% ggplot(aes(x = DatetimeUTC, y = TierID, colour = TierID)) +
+  geom_point(show.legend = F)
+
+p1 
 ```
 
 
@@ -131,6 +141,26 @@ traj <- traj_map(ws_60s,ws_60resampled, E, N) +
     labs(title = "1-Minute vs. 3-Minute sampling interval")
 traj
 ```
+```{r}
+traj_map <- function(original, E, N){
+    plot <- ggplot() + 
+        geom_path( data = original,  mapping = aes({{E}}, {{N}}, colour = "cyan"), size = 0.8, alpha = 0.2) +
+        geom_point(data = original,  mapping = aes({{E}}, {{N}}, colour = "cyan"), alpha = 0.2) + 
+        theme_bw() +
+        theme(legend.justification = "right") +
+        theme(plot.title = element_text(face = "bold", hjust = 0.5), legend.title = element_text(face = "bold", hjust = 0.5))
+
+    plot
+}
+```
+
+```{r}
+traj <- traj_map(ws_60s, E, N) + 
+    scale_colour_discrete(name = "Trajectory", labels = c("1 minute")) +
+    labs(title = "1-Minute sampling interval")
+traj
+```
+```
 
 
 ```{r}
@@ -140,18 +170,13 @@ plot<- ggplot(data = ws_60s, aes(E, N, colour = TierID)) +
 plot
 ```
 
-```{r, warning=F, message=F}
-ws <- wildschwein_BE
-metadata <- wildschwein_metadata
-```
 
 ```{r}
 sex <- merge(ws_60s, metadata[, c("TierID","Sex")], by = "TierID")
 ws <- merge(ws_60s, metadata[, c("TierID","Study_area")], by = "TierID")
   
-#ws_fin <- sex %>% 
-#  subset(select = - c(CollarID, day, moonilumination)) %>% 
-# filter(sex == "f")
+ws_filter <- sex %>% 
+  filter(Sex == "f")
 ```
 
 ```{r}
@@ -159,14 +184,13 @@ ws_60s %>%
   mutate(dt_rounded = round_date(DatetimeUTC, unit = "60 seconds")) -> ws_60s 
 ```
 
-
 ```{r}
 ws_60s %>% filter(TierName == "Caroline") -> ws_caroline
 ws_60s %>% filter(TierName == "Miriam") -> ws_miriam
 ws_60s %>% filter(TierName == "Olga") -> ws_olga
 inner_join(ws_caroline, ws_olga, by = "dt_rounded", suffix = c("_caroline", "_olga")) %>% 
       mutate(distance = sqrt((E_caroline - E_olga)^2 + (N_caroline - N_olga)^2),
-           meet = distance < 100) -> ws_join
+           meet = distance < 30) -> ws_join
 ```
 
 
@@ -180,6 +204,11 @@ ggplot() +
              aes(x=E_olga, y=N_olga, fill = TierName_olga), pch = 21, color = "black") #+ theme_void()
 ```
 
+```{r}
+inner_join(ws_caroline, ws_miriam, by = "dt_rounded", suffix = c("_caroline", "_miriam")) %>% 
+      mutate(distance = sqrt((E_caroline - E_miriam)^2 + (N_caroline - N_miriam)^2),
+           meet = distance < 30) -> ws_join
+```
 
 ```{r}
 ggplot() +
@@ -188,22 +217,78 @@ ggplot() +
   geom_point(data = ws_join %>%  filter(meet == TRUE),
              aes(x=E_caroline, y=N_caroline, fill = TierName_caroline), pch = 21, color = "black") +
   geom_point(data = ws_join %>%  filter(meet == TRUE),
-             aes(x=E_Miriam, y=N_Miriam, fill = TierName_miriam), pch = 21, color = "black") #+ theme_void()
+             aes(x=E_miriam, y=N_miriam, fill = TierName_miriam), pch = 21, color = "black") #+ theme_void()
+```
+
+
+
+```{r}
+inner_join(ws_olga, ws_miriam, by = "dt_rounded", suffix = c("_olga", "_miriam")) %>% 
+      mutate(distance = sqrt((E_olga - E_miriam)^2 + (N_olga - N_miriam)^2),
+           meet = distance < 30) -> ws_join
+```
+
+```{r}
+ggplot() +
+  geom_point(data = ws_olga, aes(x = E, y = N, color = TierName),  alpha = 0.1, size = 0.5) +
+  geom_point(data = ws_miriam, aes(x = E, y = N, color = TierName), alpha = 0.1, size = 0.5) +
+  geom_point(data = ws_join %>%  filter(meet == TRUE),
+             aes(x=E_olga, y=N_olga, fill = TierName_olga), pch = 21, color = "black") +
+  geom_point(data = ws_join %>%  filter(meet == TRUE),
+             aes(x=E_miriam, y=N_miriam, fill = TierName_miriam), pch = 21, color = "black") #+ theme_void()
+```
+
+
+```{r}
+sex <- merge(ws_60s, metadata[, c("TierID","Sex")], by = "TierID")
+ws <- merge(ws_60s, metadata[, c("TierID","Study_area")], by = "TierID")
+  
+ws_filter <- sex %>% 
+  filter(Sex == "m")
+```
+
+
+```{r}
+ws_60s %>% filter(TierID == "40") -> ws_40
+ws_60s %>% filter(TierID == "48") -> ws_48
+inner_join(ws_40, ws_48, by = "dt_rounded", suffix = c("_40", "_48")) %>% 
+      mutate(distance = sqrt((E_40 - E_48)^2 + (N_40 - N_48)^2),
+           meet = distance < 500) -> ws_join
+```
+
+
+```{r}
+ggplot() +
+  geom_point(data = ws_40, aes(x = E, y = N, color = TierName),  alpha = 0.1, size = 0.5) +
+  geom_point(data = ws_48, aes(x = E, y = N, color = TierName), alpha = 0.1, size = 0.5) +
+  geom_point(data = ws_join %>%  filter(meet == TRUE),
+             aes(x=E_40, y=N_40, fill = TierID_40), pch = 21, color = "black") +
+  geom_point(data = ws_join %>%  filter(meet == TRUE),
+             aes(x=E_48, y=N_48, fill = TierID_48), pch = 21, color = "black") #+ theme_void()
 ```
 
 
 
 
+```{r}
+# 5 minutes sampling interval
+ws_5min <- ws_range %>% filter(timelag >= 590 & timelag < 610)
+```
+
+```{r}
+# During the relevant and overlapping time
+ws_5min <- ws_5min %>% filter(DatetimeUTC > "2015-01-01" & DatetimeUTC < "2016-01-01")
 
 
+# Plot with the 5 overlapping individuals
+p5 <- ws_5min %>% ggplot(aes(x = DatetimeUTC, y = TierID, colour = TierID)) +
+  geom_point(show.legend = F)
 
+p5
 
+```
 
+```{r}
 
-
-
-
-
-
-
+```
 
