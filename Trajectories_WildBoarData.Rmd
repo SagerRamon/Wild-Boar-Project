@@ -141,6 +141,26 @@ traj <- traj_map(ws_60s,ws_60resampled, E, N) +
     labs(title = "1-Minute vs. 3-Minute sampling interval")
 traj
 ```
+```{r}
+traj_map <- function(original, E, N){
+    plot <- ggplot() + 
+        geom_path( data = original,  mapping = aes({{E}}, {{N}}, colour = "cyan"), size = 0.8, alpha = 0.2) +
+        geom_point(data = original,  mapping = aes({{E}}, {{N}}, colour = "cyan"), alpha = 0.2) + 
+        theme_bw() +
+        theme(legend.justification = "right") +
+        theme(plot.title = element_text(face = "bold", hjust = 0.5), legend.title = element_text(face = "bold", hjust = 0.5))
+
+    plot
+}
+```
+
+```{r}
+traj <- traj_map(ws_60s, E, N) + 
+    scale_colour_discrete(name = "Trajectory", labels = c("1 minute")) +
+    labs(title = "1-Minute sampling interval")
+traj
+```
+```
 
 
 ```{r}
