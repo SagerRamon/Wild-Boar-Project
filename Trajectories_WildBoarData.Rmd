@@ -62,12 +62,78 @@ p3
 ```
 
 
+```{r}
+range(ws$timelag, na.rm = T)
+nrow(ws)
+
+ws_range <- ws %>% filter(timelag >= 0 & timelag < 30000) 
+
+range(ws_range$timelag, na.rm = T)
+nrow(ws_range)
+
+nrow(ws) - nrow(ws_range)
+```
 
 
+```{r}
+ws_range %>% 
+  ggplot(aes(x = timelag)) +
+  geom_histogram(binwidth = 60) +
+  scale_y_log10()
+```
+```{r}
+w_traj <- st_as_sf((ws_60s), coords = c("E", "N"), crs = 2056, remove = FALSE)
+class(w_traj)
+```
 
 
+```{r}
+derivates <- function(ws_60s){
+    # timelag
+    sf_data <- mutate(ws_60s, timelag = as.integer(difftime(lead(ws_60s$DatetimeUTC), ws_60s$DatetimeUTC, units = "secs")))
+    # steplength
+    ws_60s$steplength <- sqrt(((ws_60s$E - lead(ws_60s$E))**2) + ((ws_60s$N - lead(ws_60s$N))**2)) 
+    # speed
+    ws_60s$speed <- (ws_60s$steplength / ws_60s$timelag)
+    
+    ws_60s
+}
+```
+
+```{r}
+ws_60resampled<- derivates(ws_60s)
+```
 
 
+```{r}
+traj_map <- function(original, resampled, E, N){
+    plot <- ggplot() + 
+        geom_path( data = original,  mapping = aes({{E}}, {{N}}, colour = "cyan"), size = 0.8, alpha = 0.2) +
+        geom_point(data = original,  mapping = aes({{E}}, {{N}}, colour = "cyan"), alpha = 0.2) + 
+        geom_path( data = resampled, mapping = aes({{E}}, {{N}}, colour = "red"),  size = 1) +
+        geom_point(data = resampled, mapping = aes({{E}}, {{N}}, colour = "red"),  size = 1.2) +
+        theme_bw() +
+        theme(legend.justification = "right") +
+        theme(plot.title = element_text(face = "bold", hjust = 0.5), legend.title = element_text(face = "bold", hjust = 0.5))
+
+    plot
+}
+```
+
+```{r}
+traj <- traj_map(ws_60s,ws_60resampled, E, N) + 
+    scale_colour_discrete(name = "Trajectory", labels = c("1 minute", "3 minutes")) +
+    labs(title = "1-Minute vs. 3-Minute sampling interval")
+traj
+```
+
+
+```{r}
+plot<- ggplot(data = ws_60s, aes(E, N, colour = TierID)) +
+        geom_path(size = 0.8, alpha = 0.3) +
+        geom_point(aes( alpha = 0.2))
+plot
+```
 
 
 

@@ -76,12 +76,14 @@ ws_range %>%
   scale_y_log10()
 ```
 
+
 ```{r, fig.height=8}
 # p2 <- ws_range %>% ggplot(aes(x = DatetimeUTC, y = TierID, colour = TierID)) +
 #   geom_point(show.legend = F)
 # p2
 # grid.arrange(p1,p2, nrow = 1)
 ```
+
 
 ```{r}
 ws_range2 <- ws_range %>% filter(timelag >= 0 & timelag < 2000)
