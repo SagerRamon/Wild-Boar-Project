@@ -13,13 +13,11 @@ We expect that we can at least to some extent identify core territories. Given t
 rm(list = ls())
 ```
 
-
 ```{r, warning=F, message=F}
 library(ComputationalMovementAnalysisData)
 library(tidyverse)
 library(sf)
 ```
-
 
 ```{r, warning=F, message=F}
 ws <- wildschwein_BE
@@ -28,8 +26,70 @@ metadata <- wildschwein_metadata
 
 ```{r}
 names(ws)
+names(metadata)
 n_distinct(ws$TierID)
+n_distinct(ws$CollarID)
 ```
+
+```{r}
+ws2 <- merge(ws, metadata[, c("","")]
+
+  
+  
+ws$location <- ws
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
