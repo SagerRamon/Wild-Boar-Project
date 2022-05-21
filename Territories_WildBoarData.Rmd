@@ -59,6 +59,7 @@ ws_sf <- st_as_sf(ws_fin,
 ```
 
 ```{r}
+ws_sf_nonfactor <- ws_sf
 ws_sf$TierID <- as.factor(ws_sf$TierID)
 ws_grp <- ws_sf %>% group_by(TierID)
 ws_smry <- summarise(ws_grp)
@@ -137,7 +138,32 @@ tm_shape(pk100_BE) +
 
 
 # Trying Raster Heatmap 
+## For Male "Ueli"
 
+```{r, message=FALSE}
+sf_ueli <- ws_sf_nonfactor %>% group_by(TierID) %>% filter(TierName == "Ueli")
+
+```
+
+
+```{r}
+
+grid <- st_make_grid(sf_ueli, square = F, cellsize = 300)
+
+grid_agg <- aggregate(sf_ueli, by = grid, FUN = length, join = st_intersects) %>% select(TierID)
+
+
+ggplot(grid_agg, aes(fill = TierID)) + geom_sf() #+ geom_sf(data = sf_ueli, inherit.aes = FALSE)
+
+tm_shape(pk100_BE) + 
+    tm_rgb() +
+tm_shape(grid_agg) +
+    tm_polygons("TierID", alpha = 0.5)
+```
+
+```{r}
+
+```
 
 
 
