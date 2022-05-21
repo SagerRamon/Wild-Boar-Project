@@ -81,6 +81,10 @@ ws_range %>%
   geom_histogram(binwidth = 60) +
   scale_y_log10()
 ```
+```{r}
+w_traj <- st_as_sf((ws_60s), coords = c("E", "N"), crs = 2056, remove = FALSE)
+class(w_traj)
+```
 
 
 ```{r}
@@ -97,6 +101,11 @@ derivates <- function(ws_60s){
 ```
 
 ```{r}
+ws_60resampled<- derivates(ws_60s)
+```
+
+
+```{r}
 traj_map <- function(original, resampled, E, N){
     plot <- ggplot() + 
         geom_path( data = original,  mapping = aes({{E}}, {{N}}, colour = "cyan"), size = 0.8, alpha = 0.2) +
@@ -111,8 +120,20 @@ traj_map <- function(original, resampled, E, N){
 }
 ```
 
+```{r}
+traj <- traj_map(ws_60s,ws_60resampled, E, N) + 
+    scale_colour_discrete(name = "Trajectory", labels = c("1 minute", "3 minutes")) +
+    labs(title = "1-Minute vs. 3-Minute sampling interval")
+traj
+```
 
 
+```{r}
+plot<- ggplot(data = ws_60s, aes(E, N, colour = TierID)) +
+        geom_path(size = 0.8, alpha = 0.3) +
+        geom_point(aes( alpha = 0.2))
+plot
+```
 
 
 
