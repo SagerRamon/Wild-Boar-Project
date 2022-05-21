@@ -17,6 +17,9 @@ rm(list = ls())
 library(ComputationalMovementAnalysisData)
 library(tidyverse)
 library(sf)
+library(tmap)
+library(terra)
+
 ```
 
 ```{r, warning=F, message=F}
@@ -30,59 +33,48 @@ names(metadata)
 n_distinct(ws$TierID)
 n_distinct(ws$CollarID)
 ```
-
+# Data Preparation
 ```{r}
-ws2 <- merge(ws, metadata[, c("","")]
+ws <- merge(ws, metadata[, c("TierID","Sex")], by = "TierID")
+ws <- merge(ws, metadata[, c("TierID","Study_area")], by = "TierID")
+  
+ws_fin <- ws %>% 
+  subset(select = - c(CollarID, day, moonilumination)) %>% 
+  filter(Study_area == "Bern")
+```
 
-  
-  
-ws$location <- ws
+
+
+# Transforming to SF
+```{r}
+ws_sf <- st_as_sf(ws_fin,
+                coords = c("E", "N"), 
+                crs = 2056)
+```
+```{r}
+ws_grp <- ws_sf %>% group_by(TierID)
+ws_smry <- summarise(ws_grp)
+
+mcp <- st_convex_hull(ws_smry)
 
 ```
 
 
 
 
+# Plotting Convex Hull's
+```{r, message=F, warning=F}
+pk100_BE <- terra::rast("pk100_BE.tif")
+pk100_BE
+```
 
+```{r}
+tm_shape(pk100_BE) + 
+    tm_rgb() +
+    tm_shape(mcp) +
+    tm_polygons("TierID", alpha = 0.5, border.col = "red")
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+```
 
 
 
