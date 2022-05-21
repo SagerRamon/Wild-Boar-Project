@@ -13,6 +13,11 @@ rm(list = ls())
 library(ComputationalMovementAnalysisData)
 library(tidyverse)
 library(sf)
+library(readr)        
+library(dplyr)        
+library(ggplot2)      
+library(lubridate)
+library(ggpubr)
 ```
 
 
@@ -134,6 +139,68 @@ plot<- ggplot(data = ws_60s, aes(E, N, colour = TierID)) +
         geom_point(aes( alpha = 0.2))
 plot
 ```
+
+```{r, warning=F, message=F}
+ws <- wildschwein_BE
+metadata <- wildschwein_metadata
+```
+
+```{r}
+sex <- merge(ws_60s, metadata[, c("TierID","Sex")], by = "TierID")
+ws <- merge(ws_60s, metadata[, c("TierID","Study_area")], by = "TierID")
+  
+#ws_fin <- sex %>% 
+#  subset(select = - c(CollarID, day, moonilumination)) %>% 
+# filter(sex == "f")
+```
+
+```{r}
+ws_60s %>% 
+  mutate(dt_rounded = round_date(DatetimeUTC, unit = "60 seconds")) -> ws_60s 
+```
+
+
+```{r}
+ws_60s %>% filter(TierName == "Caroline") -> ws_caroline
+ws_60s %>% filter(TierName == "Miriam") -> ws_miriam
+ws_60s %>% filter(TierName == "Olga") -> ws_olga
+inner_join(ws_caroline, ws_olga, by = "dt_rounded", suffix = c("_caroline", "_olga")) %>% 
+      mutate(distance = sqrt((E_caroline - E_olga)^2 + (N_caroline - N_olga)^2),
+           meet = distance < 100) -> ws_join
+```
+
+
+```{r}
+ggplot() +
+  geom_point(data = ws_caroline, aes(x = E, y = N, color = TierName),  alpha = 0.1, size = 0.5) +
+  geom_point(data = ws_olga, aes(x = E, y = N, color = TierName), alpha = 0.1, size = 0.5) +
+  geom_point(data = ws_join %>%  filter(meet == TRUE),
+             aes(x=E_caroline, y=N_caroline, fill = TierName_caroline), pch = 21, color = "black") +
+  geom_point(data = ws_join %>%  filter(meet == TRUE),
+             aes(x=E_olga, y=N_olga, fill = TierName_olga), pch = 21, color = "black") #+ theme_void()
+```
+
+
+```{r}
+ggplot() +
+  geom_point(data = ws_caroline, aes(x = E, y = N, color = TierName),  alpha = 0.1, size = 0.5) +
+  geom_point(data = ws_miriam, aes(x = E, y = N, color = TierName), alpha = 0.1, size = 0.5) +
+  geom_point(data = ws_join %>%  filter(meet == TRUE),
+             aes(x=E_caroline, y=N_caroline, fill = TierName_caroline), pch = 21, color = "black") +
+  geom_point(data = ws_join %>%  filter(meet == TRUE),
+             aes(x=E_Miriam, y=N_Miriam, fill = TierName_miriam), pch = 21, color = "black") #+ theme_void()
+```
+
+
+
+
+
+
+
+
+
+
+
 
 
 
