@@ -3,7 +3,7 @@ title: "EDA - Wild Boar forest project"
 output: html_document
 date: "`r Sys.Date()`"
 editor_options: 
-  chunk_output_type: console
+  chunk_output_type: inline
 ---
 
 ```{r, warning=F, message=F}
@@ -57,7 +57,10 @@ p1
 range(ws$timelag, na.rm = T)
 nrow(ws)
 
-ws_range <- ws %>% filter(timelag >= 0 & timelag < 30000) 
+# Filtering and Removing some columns:
+ws_range <- ws %>% 
+  filter(timelag >= 0 & timelag < 30000) %>% 
+  subset(select = - c(day, CollarID, moonilumination))
 
 range(ws_range$timelag, na.rm = T)
 nrow(ws_range)
@@ -81,7 +84,7 @@ ws_range %>%
 ```
 
 ```{r}
-ws_range2 <- ws %>% filter(timelag >= 0 & timelag < 2000)
+ws_range2 <- ws_range %>% filter(timelag >= 0 & timelag < 2000)
 
 ws_range2 %>% 
   ggplot(aes(x = timelag)) +
@@ -92,7 +95,7 @@ ws_range2 %>%
 
 ```{r}
 # ws_60s <- ws %>% filter(timelag >= 0 & timelag < 500)
-ws_60s <- ws %>% filter(timelag >= 50 & timelag < 70)
+ws_60s <- ws_range %>% filter(timelag >= 50 & timelag < 70)
 
 ws_60s %>% 
   ggplot(aes(x = timelag)) +
@@ -125,13 +128,12 @@ ws_names <- unique(ws_60s$TierName)
 
 # Pre-Analysis of Location
 
+
 ```{r}
 sf_60s <- st_as_sf(ws_60s, coords = c("N","E"), crs = 2056)
 
 sf_60s_grouped <- group_by(sf_60s, TierID)
 ```
-
-## MCP
 
 ```{r}
 sf_60s_smry <- summarise(sf_60s_grouped)
@@ -146,6 +148,8 @@ ggplot(mcp, ) +
 ```
 --> Territoriality sex biased in wild boar?
 
+
+# Aggregate & Grid by Nils
 ```{r}
 grid <- st_make_grid(sf_60s, square = F, cellsize = 1000)
 
