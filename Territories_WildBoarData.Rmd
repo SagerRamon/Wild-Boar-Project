@@ -181,7 +181,7 @@ grid_agg_mult <- aggregate(x = ws_mult, by = grid_area, FUN = length ) %>% selec
 tm_shape(pk100_BE) + 
     tm_rgb() +
 tm_shape(grid_agg_mult) +
-  tm_polygons("TierID", alpha = 0.5)
+  tm_polygons("TierID") #, alpha = 0.7
 
 # Why do no other functions work ?
 # how can i keep Tier ID as a variable in grid_agg_mult ?
@@ -191,11 +191,57 @@ Try next:
 create grid aggregation for each ID
 Then add ID to the aggregation
 then try to plot it again
+## --> appears that it is not possible to plot multiple animals in a way so that one can see which distribution belongs to which.
+--> see: https://r-tmap.github.io/tmap-book
+
+
+```{r}
+ws_sab <- ws_sf %>% group_by(TierID) %>% filter(TierID %in% c(2))
+ws_nic <- ws_sf %>% group_by(TierID) %>% filter(TierID %in% c(5))
+
+grid_agg_sab <- aggregate(x = ws_mult, by = grid_area, FUN = length ) %>% select(TierName) 
+grid_agg_nic <- aggregate(x = ws_mult, by = grid_area, FUN = length ) %>% select(TierName)
+
+grid_agg_sab <- grid_agg_sab %>% mutate(TierID = 2)
+grid_agg_nic <- grid_agg_nic %>% mutate(TierID = 5)
+
+grid_agg_mult <- rbind(grid_agg_sab, grid_agg_nic)
+```
+
+
+```{r}
+tm_shape(pk100_BE) + 
+  tm_rgb() +
+  tm_shape(grid_agg_mult) +
+  tm_polygons("TierName", col = "TierID")
+
+```
+# In that case, the next steps are:
+- write a function to produce a plot for each animal
 
 
 ```{r}
 
+
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
