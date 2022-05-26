@@ -292,3 +292,8 @@ p5
 
 ```
 
+
+# detect meet ups between the animals
+# then, after a meet up, detect if distance between the animals increased again
+
+

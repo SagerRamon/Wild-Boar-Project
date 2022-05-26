@@ -155,10 +155,13 @@ grid_agg <- aggregate(sf_ueli, by = grid, FUN = length, join = st_intersects) %>
 
 ggplot(grid_agg, aes(fill = TierID)) + geom_sf() #+ geom_sf(data = sf_ueli, inherit.aes = FALSE)
 
-tm_shape(pk100_BE) + 
+p<- tm_shape(pk100_BE) + 
     tm_rgb() +
-tm_shape(grid_agg) +
+    tm_shape(grid_agg) +
     tm_polygons("TierID", alpha = 0.5)
+```
+```{r}
+p
 ```
 
 
@@ -218,12 +221,6 @@ tm_shape(pk100_BE) +
 ```
 # In that case, the next steps are:
 - write a function to produce a plot for each animal
-
-
-```{r}
-
-
-```
 
 
 
