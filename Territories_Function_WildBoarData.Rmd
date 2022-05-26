@@ -68,7 +68,7 @@ ws_sf$TierID <- as.factor(ws_sf$TierID)
 
 grid_agg_plots <- function(data, underl_map){
   
-  grid_area <- st_make_grid(data, square = FALSE, cellsize = 500, crs = 2056) %>% st_as_sf()
+  grid_area <- st_make_grid(data, square = FALSE, cellsize = 70, crs = 2056) %>% st_as_sf()
   
   id_list <- unique(data$TierID)
   plot_list <- vector("list", length(id_list))
@@ -99,6 +99,8 @@ grid_agg_plots <- function(data, underl_map){
 
 
 ```{r}
+tmap_mode("view")
+
 underl_map <- terra::rast("pk100_BE.tif")
 
 # ws_sf <- ws_sf %>% filter(TierID %in% c(10,11,16)) # subset
