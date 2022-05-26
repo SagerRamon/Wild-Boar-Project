@@ -72,7 +72,6 @@ rm(ws_fin)
 
 grid_agg_plots <- function(data, underl_map, Cellsize){
   
-  grid_area <- st_make_grid(data, square = FALSE, cellsize = Cellsize, crs = 2056) %>% st_as_sf()
   
   id_list <- unique(data$TierID)
   plot_list <- vector("list", length(id_list))
@@ -81,6 +80,8 @@ grid_agg_plots <- function(data, underl_map, Cellsize){
   
   for (i in seq(1,length(id_list))){
     ws_temp <- filter(data, TierID == id_list[i])
+    grid_area <- st_make_grid(ws_temp, square = FALSE, cellsize = Cellsize, crs = 2056) %>% st_as_sf()
+    
     
     grid_agg <- aggregate(x = ws_temp, by = grid_area, FUN = length) %>% select(TierID)
 
@@ -137,14 +138,23 @@ a = plots[[1]]
 b = plots[[2]]
 
 Arranged_plots <- tmap_arrange(plots, ncol = 2)
-tmap_save(Arranged_plots, "WildBoarGrids.html")
-Arranged_plots
+tmap_save(Arranged_plots, units = "cm", height = 100, width = 80)
+# Arranged_plots
 ```
 
 
 
+- With larger Grissizes:
+- Try to get function to mean or sth else
+- Try to arrange it nicer (without white boarders)
+
+```{r}
+
+```
 
 
+```{r}
 
+```
 
 
