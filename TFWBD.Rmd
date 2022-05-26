@@ -1,0 +1,150 @@
+---
+title: "Territories_Function"
+output: html_document
+date: "`r Sys.Date()`"
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r, warning=F, message=F}
+rm(list = ls())
+```
+
+```{r, warning=F, message=F}
+library(ComputationalMovementAnalysisData)
+library(tidyverse)
+library(sf)
+library(tmap)
+library(terra)
+library(gridExtra)
+
+```
+
+```{r, warning=F, message=F}
+ws <- wildschwein_BE
+metadata <- wildschwein_metadata
+```
+
+```{r}
+names(ws)
+names(metadata)
+n_distinct(ws$TierID)
+n_distinct(ws$CollarID)
+```
+
+
+
+# Data Preparation
+```{r}
+ws <- merge(ws, metadata[, c("TierID","Sex")], by = "TierID")
+ws <- merge(ws, metadata[, c("TierID","Study_area")], by = "TierID")
+  
+ws_fin <- ws %>% 
+  subset(select = - c(CollarID, day, moonilumination)) %>% 
+  filter(Study_area == "Bern")
+```
+
+```{r}
+# remove ws whole data set (to save storage)
+rm(ws)
+
+```
+
+
+
+# Transforming to SF
+```{r}
+ws_sf <- st_as_sf(ws_fin,
+                coords = c("E", "N"), 
+                crs = 2056)
+
+# ws_sf_nonfactor <- ws_sf
+ws_sf$TierID <- as.factor(ws_sf$TierID)
+
+rm(ws_fin)
+```
+
+
+
+
+# function to produce a density (field) plot for each animal
+```{r}
+
+grid_agg_plots <- function(data, underl_map, Cellsize){
+  
+  grid_area <- st_make_grid(data, square = FALSE, cellsize = Cellsize, crs = 2056) %>% st_as_sf()
+  
+  id_list <- unique(data$TierID)
+  plot_list <- vector("list", length(id_list))
+  
+  data <- group_by(data, TierID)
+  
+  for (i in seq(1,length(id_list))){
+    ws_temp <- filter(data, TierID == id_list[i])
+    
+    grid_agg <- aggregate(x = ws_temp, by = grid_area, FUN = length) %>% select(TierID)
+
+    p <-  tm_shape(underl_map) +
+                      tm_rgb() +
+                      tm_shape(grid_agg) +
+                      tm_polygons("TierID", alpha = 0.7, legend.show = FALSE)
+
+    # creating variable & append to plot list
+    var_name <- paste("P", id_list[i], sep = "")
+    # assign(var_name, p)
+    plot_list[[i]] <- assign(var_name, p)
+    # plot_list[[i]] <- ws_temp
+    
+  }
+  return(plot_list)
+}
+
+```
+
+
+```{r}
+tmap_mode("view")
+
+underl_map <- terra::rast("pk100_BE.tif")
+
+# ws_sf <- ws_sf %>% filter(TierID %in% c(10,11,16)) # subset
+# ws_sf <- ws_sf %>% filter(TierID %in% c(10,22,36,40,48)) # subset
+# ws_sf <- ws_sf %>% filter(TierID %in% c(36))
+
+# grid_agg_plots(ws_sf, underl_map, 30)
+
+```
+
+
+```{r}
+# tmap_mode("plot")
+# 
+# tm_shape(underl_map) + tm_rgb()
+
+```
+
+
+# Plot all Animals in a plot
+```{r}
+plots <- grid_agg_plots(ws_sf, underl_map, 100)
+```
+
+
+```{r}
+tmap_mode("plot")
+
+a = plots[[1]]
+b = plots[[2]]
+
+Arranged_plots <- tmap_arrange(plots, ncol = 2)
+tmap_save(Arranged_plots, "WildBoarGrids.html")
+Arranged_plots
+```
+
+
+
+
+
+
+
+
