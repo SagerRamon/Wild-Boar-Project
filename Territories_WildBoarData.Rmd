@@ -187,13 +187,38 @@ tm_shape(grid_agg_mult) +
 # how can i keep Tier ID as a variable in grid_agg_mult ?
 ```
 
+
+## For multpile Individuals, here: 
+```{r}
+ws_mult <- ws_sf_nonfactor %>% group_by(TierID) %>% filter(TierID %in% c(25,31,40,97))
+```
+
+
+```{r}
+# create grid
+grid_area <- st_make_grid(ws_sf, square = FALSE, cellsize = 300) %>% 
+  st_as_sf() %>% 
+  mutate(grid_id = 1:n())
+
+grid_agg_mult <- aggregate(x = ws_mult, by = grid_area, FUN = length ) %>% select(TierID)
+
+
+tm_shape(pk100_BE) + 
+    tm_rgb() +
+tm_shape(grid_agg_mult) +
+  tm_polygons("TierID") #, alpha = 0.7
+
+# Why do no other functions work ?
+# how can i keep Tier ID as a variable in grid_agg_mult ?
+```
+
+
 Try next: 
 create grid aggregation for each ID
 Then add ID to the aggregation
 then try to plot it again
 ## --> appears that it is not possible to plot multiple animals in a way so that one can see which distribution belongs to which.
 --> see: https://r-tmap.github.io/tmap-book
-
 
 ```{r}
 ws_sab <- ws_sf %>% group_by(TierID) %>% filter(TierID %in% c(2))
