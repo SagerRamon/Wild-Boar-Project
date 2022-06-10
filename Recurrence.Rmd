@@ -86,7 +86,7 @@ grid_area <- grid_area %>% mutate(ID = row_number())
 grid_agg <- st_join(ws_sf_dt, grid_area, left = FALSE)
 
 ###
-by_cell <- grid_agg %>%  mutate(logic = ifelse(ID == lag(ID), TRUE, FALSE)) %>% group_by(ID) %>% count(logic) %>% filter(logic == FALSE)
+by_cell <- grid_agg %>% mutate(logic = ifelse(ID == lag(ID), TRUE, FALSE)) %>% group_by(ID) %>% count(logic) %>% filter(logic == FALSE)
 ###
 
 new_agg <- st_join(grid_area, by_cell, by = ID)
@@ -107,10 +107,110 @@ tm_shape(underl_map) +
 ```
 
 
+# function to produce recurrence plots
+```{r}
+grid_recurr_plots <- function(data, underl_map, Cellsize){
+  
+  id_list <- unique(data$TierID)
+  plot_list <- vector("list", length(id_list))
+  agg_list  <- vector("list", length(id_list))
+  
+  data <- group_by(data, TierID)
+  
+  for (i in seq(1,length(id_list))){
+    ws_temp <- filter(data, TierID == id_list[i]) %>% select(DatetimeUTC, TierID)
+    
+    grid_area <- st_make_grid(ws_temp, square = FALSE, cellsize = Cellsize, crs = 2056) %>% st_as_sf()
+    grid_area <- grid_area %>% mutate(ID = row_number())
+    
+    grid_agg <- st_join(ws_temp, grid_area, left = FALSE)
+    
+    by_cell <- grid_agg %>% mutate(logic = ifelse(ID == lag(ID), TRUE, FALSE)) %>% group_by(ID) %>% count(logic) %>% filter(logic == FALSE)
+
+    new_agg <- st_join(grid_area, by_cell)
+    
+    # var_name <- paste("P", id_list[i], sep = "")
+    # agg_list[[i]] <- assign(var_name, new_agg)
+    
+    # Plot 
+    p <-  tm_shape(underl_map) +
+                      tm_rgb() +
+                      tm_shape(new_agg) +
+                      tm_polygons("n", alpha = 0.8, style = "cont", legend.hist = TRUE) +
+                      tm_layout(legend.outside = TRUE)
+
+    # creating variable & append to plot list
+    var_name <- paste("P", id_list[i], sep = "")
+    # assign(var_name, p)
+    plot_list[[i]] <- assign(var_name, p)
+    
+    
+  }
+  return(plot_list)
+  # return(agg_list)
+}
+
+```
 
 
 
+test function
+```{r}
+# c(10, 22, 36, 40, 48))
+ws_sf_dt <- ws_sf %>% filter(TierID %in% c(10, 22, 36, 40, 48)) %>% select(DatetimeUTC, TierID)
 
+plots <- grid_recurr_plots(ws_sf_dt, underl_map, 150)
+Arranged_plots <- tmap_arrange(plots, ncol = 2)
+```
+
+
+```{r}
+# plots
+Arranged_plots
+```
+
+
+# Plot with multiple layers: -> new function
+
+```{r}
+recurr_layer_plot <- function(data, underl_map, Cellsize){
+  
+  grid_area <- st_make_grid(data, square = FALSE, cellsize = Cellsize) %>%  st_as_sf() 
+  grid_area <- grid_area %>% mutate(ID = row_number())
+
+  grid_agg <- st_join(data, grid_area, left = FALSE)
+
+  by_cell <- grid_agg %>% mutate(logic = ifelse(ID == lag(ID), TRUE, FALSE)) %>% group_by(ID) %>% count(logic) %>% filter(logic == FALSE)
+
+  new_agg <- st_join(grid_area, by_cell, by = ID)
+  
+  return(new_agg)
+}
+```
+
+
+```{r}
+ws_sf_dt <- ws_sf %>% filter(TierID %in% c(22)) %>% select(DatetimeUTC, TierID)
+layer_22 <- recurr_layer_plot(ws_sf_dt, underl_map, 150)
+
+ws_sf_dt <- ws_sf %>% filter(TierID %in% c(36)) %>% select(DatetimeUTC, TierID)
+layer_36 <- recurr_layer_plot(ws_sf_dt, underl_map, 150)
+```
+
+
+```{r}
+tmap_mode("view")
+
+p <- tm_shape(underl_map) +
+        tm_rgb() +
+        tm_shape(layer_22) +
+        tm_polygons("n", alpha = 0.8, style = "cont", legend.hist = TRUE) +
+        tm_layout(legend.show = FALSE)  +
+        tm_shape(layer_36) +
+        tm_polygons("n", alpha = 0.8, style = "cont", legend.hist = TRUE) +
+        tm_layout(legend.show = FALSE)
+
+```
 
 
 
