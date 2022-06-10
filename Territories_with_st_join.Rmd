@@ -136,12 +136,13 @@ new_agg <- st_join(grid_area, by_cell)
 
 Plot
 
-```{r, fig.height=5, fig.width=6}
+```{r, fig.height=5, fig.width=10}
 
 tm_shape(underl_map) +
     tm_rgb() +
     tm_shape(new_agg) +
-    tm_polygons("n", alpha = 0.9)
+    tm_polygons("n", alpha = 0.8, style = "cont", legend.hist = TRUE) +
+    tm_layout(legend.outside = TRUE)
     
 ```
 
