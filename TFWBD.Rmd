@@ -22,7 +22,11 @@ library(gridExtra)
 
 ```{r, warning=F, message=F}
 ws <- wildschwein_BE
-metadata <- wildschwein_metadata
+metadata <- wildschwein_metadata 
+
+# metadata selection of the 5
+
+metadata <- metadata %>% filter(TierID %in% c(10,22,36,40,48))
 ```
 
 ```{r}
@@ -118,9 +122,8 @@ underl_map <- terra::rast("pk100_BE.tif")
 
 
 ```{r}
-# tmap_mode("plot")
-# 
-# tm_shape(underl_map) + tm_rgb()
+tmap_mode("plot")
+tm_shape(underl_map) + tm_rgb()
 
 ```
 
@@ -138,23 +141,36 @@ a = plots[[1]]
 b = plots[[2]]
 
 Arranged_plots <- tmap_arrange(plots, ncol = 2)
-tmap_save(Arranged_plots, units = "cm", height = 100, width = 80)
-# Arranged_plots
+# tmap_save(Arranged_plots, units = "cm", height = 100, width = 80)
+Arranged_plots
 ```
 
 
 
-- With larger Grissizes:
-- Try to get function to mean or sth else
-- Try to arrange it nicer (without white boarders)
+# 2 "nice" plots for presentation
 
 ```{r}
+ws_females <-  ws_sf %>% filter(TierID %in% c(22,36))
+ws_males   <-  ws_sf %>% filter(TierID %in% c(40,48))
 
+plots_females <- grid_agg_plots(ws_females, underl_map, 150)
+plots_males   <- grid_agg_plots(ws_males  , underl_map, 150)
+
+arr_females <- tmap_arrange(plots_females, ncol = 1)
+arr_males   <- tmap_arrange(plots_males  , ncol = 1)
+
+arr_females
+arr_males
 ```
 
 
-```{r}
 
-```
+
+
+
+
+
+
+
 
 
