@@ -1,0 +1,145 @@
+---
+title: "Recurrence"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+Recurrence
+
+
+```{r, warning=F, message=F}
+rm(list = ls())
+```
+
+```{r, warning=F, message=F}
+library(ComputationalMovementAnalysisData)
+library(tidyverse)
+library(sf)
+library(tmap)
+library(terra)
+library(gridExtra)
+
+```
+
+```{r, warning=F, message=F}
+ws <- wildschwein_BE
+metadata <- wildschwein_metadata
+metadata <- metadata %>% filter(TierID %in% c(10,22,36,40,48))
+
+underl_map <- terra::rast("pk100_BE.tif")
+
+```
+
+```{r}
+names(ws)
+names(metadata)
+n_distinct(ws$TierID)
+n_distinct(ws$CollarID)
+```
+
+
+
+# Data Preparation
+```{r}
+ws <- merge(ws, metadata[, c("TierID","Sex")], by = "TierID")
+ws <- merge(ws, metadata[, c("TierID","Study_area")], by = "TierID")
+  
+ws_fin <- ws %>% 
+  subset(select = - c(CollarID, day, moonilumination)) %>% 
+  filter(Study_area == "Bern")
+```
+
+```{r}
+# remove ws whole data set (to save storage)
+rm(ws)
+
+```
+
+
+
+# Transforming to SF
+```{r}
+ws_sf <- st_as_sf(ws_fin,
+                coords = c("E", "N"), 
+                crs = 2056)
+
+# ws_sf_nonfactor <- ws_sf
+ws_sf$TierID <- as.factor(ws_sf$TierID)
+
+rm(ws_fin)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
