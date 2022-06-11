@@ -168,3 +168,8 @@ B <- tm_shape(underl_map) +
 
 
 
+=======
+
+ws_sf_dt <- ws_sf %>% filter(TierID %in% c(40)) %>% select(DatetimeUTC, TierID)
+```
+>>>>>>> ca562aef9502d58f1387ed7348df16f38b1df1f3
