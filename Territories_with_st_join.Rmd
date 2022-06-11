@@ -98,7 +98,7 @@ grid_join_plots <- function(data, underl_map, Cellsize){
                       tm_rgb() +
                       tm_shape(new_agg) +
                       tm_polygons("n", alpha = 0.8, style = "cont", legend.hist = TRUE) +
-                      tm_layout(legend.outside = TRUE))
+                      tm_layout(legend.outside = TRUE)
 
     # creating variable & append to plot list
     var_name <- paste("P", id_list[i], sep = "")
@@ -158,8 +158,6 @@ plots <- grid_join_plots(ws_sf_dt, underl_map, 100)
 plots
 
 ```
-
-
 
 
 
