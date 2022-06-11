@@ -89,7 +89,6 @@ by_cell <- grid_agg %>% mutate(logic = ifelse(ID == lag(ID), TRUE, FALSE)) %>% g
 
 new_agg <- st_join(grid_area, by_cell, by = ID) %>% drop_na()
 
-
 ```
 
 Plot
