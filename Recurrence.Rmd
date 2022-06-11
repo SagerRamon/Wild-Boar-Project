@@ -76,8 +76,6 @@ rm(ws_fin)
 ws_sf_dt <- ws_sf %>% filter(TierID %in% c(40)) %>% select(DatetimeUTC, TierID)
 ```
 
-
-
 ```{r}
 grid_area <- st_make_grid(ws_sf_dt, square = FALSE, cellsize = 150) %>%  st_as_sf() 
 
@@ -89,20 +87,20 @@ grid_agg <- st_join(ws_sf_dt, grid_area, left = FALSE)
 by_cell <- grid_agg %>% mutate(logic = ifelse(ID == lag(ID), TRUE, FALSE)) %>% group_by(ID) %>% count(logic) %>% filter(logic == FALSE)
 ###
 
-new_agg <- st_join(grid_area, by_cell, by = ID)
+new_agg <- st_join(grid_area, by_cell, by = ID) %>% drop_na()
 
 
 ```
 
 Plot
-
 ```{r, fig.height=5, fig.width=10}
+tmap_mode("view")
 
-tm_shape(underl_map) +
-    tm_rgb() +
-    tm_shape(new_agg) +
-    tm_polygons("n", alpha = 0.8, style = "cont", legend.hist = TRUE) +
-    tm_layout(legend.outside = TRUE)
+A <- tm_shape(underl_map) +
+      tm_rgb() +
+      tm_shape(new_agg) +
+      tm_polygons("n", alpha = 0.8, style = "cont", palette = "Blues", n = 20) +
+      tm_layout(legend.outside = TRUE)
     
 ```
 
@@ -136,7 +134,7 @@ grid_recurr_plots <- function(data, underl_map, Cellsize){
     p <-  tm_shape(underl_map) +
                       tm_rgb() +
                       tm_shape(new_agg) +
-                      tm_polygons("n", alpha = 0.8, style = "cont", legend.hist = TRUE) +
+                      tm_polygons("n", alpha = 0.8, style = "cont") +
                       tm_layout(legend.outside = TRUE)
 
     # creating variable & append to plot list
@@ -156,8 +154,9 @@ grid_recurr_plots <- function(data, underl_map, Cellsize){
 
 test function
 ```{r}
+tmap_mode("plot")
 # c(10, 22, 36, 40, 48))
-ws_sf_dt <- ws_sf %>% filter(TierID %in% c(10, 22, 36, 40, 48)) %>% select(DatetimeUTC, TierID)
+ws_sf_dt <- ws_sf %>% filter(TierID %in% c(22, 36)) %>% select(DatetimeUTC, TierID)
 
 plots <- grid_recurr_plots(ws_sf_dt, underl_map, 150)
 Arranged_plots <- tmap_arrange(plots, ncol = 2)
@@ -166,7 +165,7 @@ Arranged_plots <- tmap_arrange(plots, ncol = 2)
 
 ```{r}
 # plots
-Arranged_plots
+# Arranged_plots
 ```
 
 
@@ -182,7 +181,8 @@ recurr_layer_plot <- function(data, underl_map, Cellsize){
 
   by_cell <- grid_agg %>% mutate(logic = ifelse(ID == lag(ID), TRUE, FALSE)) %>% group_by(ID) %>% count(logic) %>% filter(logic == FALSE)
 
-  new_agg <- st_join(grid_area, by_cell, by = ID)
+  # Drop NA deletes the rest of the grid
+  new_agg <- st_join(grid_area, by_cell, by = ID) %>% drop_na()
   
   return(new_agg)
 }
@@ -191,29 +191,49 @@ recurr_layer_plot <- function(data, underl_map, Cellsize){
 
 ```{r}
 ws_sf_dt <- ws_sf %>% filter(TierID %in% c(22)) %>% select(DatetimeUTC, TierID)
-layer_22 <- recurr_layer_plot(ws_sf_dt, underl_map, 150)
+Miriam <- recurr_layer_plot(ws_sf_dt, underl_map, 100)
 
 ws_sf_dt <- ws_sf %>% filter(TierID %in% c(36)) %>% select(DatetimeUTC, TierID)
-layer_36 <- recurr_layer_plot(ws_sf_dt, underl_map, 150)
+Olga <- recurr_layer_plot(ws_sf_dt, underl_map, 100)
 ```
 
 
 ```{r}
 tmap_mode("view")
 
-p <- tm_shape(underl_map) +
+MO <- tm_shape(underl_map) +
         tm_rgb() +
-        tm_shape(layer_22) +
-        tm_polygons("n", alpha = 0.8, style = "cont", legend.hist = TRUE) +
+        tm_shape(Miriam) +
+        tm_polygons("n", alpha = 0.8, style = "cont", palette = "Blues", n = 30) +
         tm_layout(legend.show = FALSE)  +
-        tm_shape(layer_36) +
-        tm_polygons("n", alpha = 0.8, style = "cont", legend.hist = TRUE) +
+        tm_shape(Olga) +
+        tm_polygons("n", alpha = 0.8, style = "cont", palette = "Reds", n = 30) +
         tm_layout(legend.show = FALSE)
 
 ```
 
 
+```{r}
+ws_sf_dt <- ws_sf %>% filter(TierID %in% c(40)) %>% select(DatetimeUTC, TierID)
+Franz <- recurr_layer_plot(ws_sf_dt, underl_map, 100)
 
+ws_sf_dt <- ws_sf %>% filter(TierID %in% c(48)) %>% select(DatetimeUTC, TierID)
+Amos <- recurr_layer_plot(ws_sf_dt, underl_map, 100)
+
+```
+
+
+```{r}
+FA <- tm_shape(underl_map) +
+        tm_rgb() +
+        tm_shape(Franz) +
+        tm_polygons("n", alpha = 0.8, style = "cont", palette = "Blues", n = 30) +
+        tm_layout(legend.show = FALSE)  +
+        tm_shape(Amos) +
+        tm_polygons("n", alpha = 0.8, style = "cont", palette = "Reds", n = 30) +
+        tm_layout(legend.show = FALSE)
+
+```
 
 
 
