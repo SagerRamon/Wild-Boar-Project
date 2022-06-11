@@ -23,11 +23,18 @@ library(data.table)
 ```
 
 ```{r, warning=F, message=F}
+# Wild Boar data
 ws <- wildschwein_BE
 metadata <- wildschwein_metadata
 metadata <- metadata %>% filter(TierID %in% c(10,22,36,40,48))
 
+# Raster Map
 underl_map <- terra::rast("pk100_BE.tif")
+
+# Loading and preparing Forest Polygon
+st_layers("Feldaufnahmen_Fanel.gpkg")
+forest <- read_sf("Feldaufnahmen_Fanel.gpkg")
+forest <- forest %>% filter(Frucht == "Wald")
 
 ```
 
@@ -72,6 +79,73 @@ rm(ws_fin)
 
 ```{r}
 # c(10, 22, 36, 40, 48))
-
-ws_sf_dt <- ws_sf %>% filter(TierID %in% c(40)) %>% select(DatetimeUTC, TierID)
+ws_sf_dt <- ws_sf %>% filter(TierID %in% c(22)) %>% select(DatetimeUTC, TierID)
 ```
+
+--------------------------------------------------------------------------------
+
+forest - grid
+
+```{r}
+grid_area <- st_make_grid(ws_sf_dt, square = FALSE, cellsize = 150) %>%  st_as_sf() 
+
+
+intersects <- st_intersects(grid_area,  forest)
+grid_area$forest <- sapply(intersects, FUN = length) > 0
+# Additional column in grid_area with T/F for Forest
+
+
+grid_area <- grid_area %>% mutate(ID = row_number())
+
+grid_agg <- st_join(ws_sf_dt, grid_area, left = FALSE)
+
+by_cell <- grid_agg %>% group_by(ID,forest) %>% summarise(n = n())
+
+new_agg <- st_join(grid_area, by_cell)
+```
+
+Plot
+```{r, fig.height=5, fig.width=10}
+tmap_mode("view")
+
+A <- tm_shape(underl_map) +
+      tm_rgb() +
+      tm_shape(new_agg) +
+      tm_polygons("n", alpha = 0.8, style = "cont", palette = "Reds", n = 30) +
+      tm_layout(legend.outside = TRUE) +
+      tm_facets(by = "forest.x", ncol = 2)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
