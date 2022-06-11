@@ -96,6 +96,7 @@ ws_range %>%
   geom_histogram(binwidth = 60) +
   scale_y_log10()
 ```
+
 ```{r}
 w_traj <- st_as_sf((ws_60s), coords = c("E", "N"), crs = 2056, remove = FALSE)
 class(w_traj)
@@ -160,8 +161,6 @@ traj <- traj_map(ws_60s, E, N) +
     labs(title = "1-Minute sampling interval")
 traj
 ```
-```
-
 
 ```{r}
 plot<- ggplot(data = ws_60s, aes(E, N, colour = TierID)) +
@@ -178,6 +177,10 @@ ws <- merge(ws_60s, metadata[, c("TierID","Study_area")], by = "TierID")
 ws_filter <- sex %>% 
   filter(Sex == "f")
 ```
+
+
+
+
 
 ```{r}
 ws_60s %>% 
