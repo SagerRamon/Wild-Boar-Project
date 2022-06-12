@@ -134,10 +134,45 @@ meets_caroline_olga <- ws_caroline_olga_join %>% filter(meet == TRUE)
 # Now code plot with geom_path for each of these meetup groups for both - use meets_caroline_olga for that ?
 
 
+```{r}
+ws_caroline_olga_join <- ws_caroline_olga_join %>% mutate(
+  #
+  mMinus6 = shift(meet, 6, type = "lead"),
+  mMinus5 = shift(meet, 5, type = "lead"),
+  mMinus4 = shift(meet, 4, type = "lead"),
+  mMinus3 = shift(meet, 3, type = "lead"),
+  mMinus2 = shift(meet, 2, type = "lead"),
+  mMinus1 = shift(meet, 1, type = "lead"),
+  mPlus1  = shift(meet, 1, type = "lag"),
+  mPlus2  = shift(meet, 2, type = "lag"),
+  mPlus3  = shift(meet, 3, type = "lag"),
+  mPlus4  = shift(meet, 4, type = "lag"),
+  mPlus5  = shift(meet, 5, type = "lag"),
+  mPlus6  = shift(meet, 6, type = "lag"),
+  #
+)
 
 
+```
 
 
+```{r}
+meet_traj <- ws_caroline_olga_join %>% filter( mMinus6 + mMinus5 + mMinus4 + mMinus3 + mMinus2 + mMinus1 + 
+                                                 mPlus1 + mPlus2 + mPlus3 + mPlus4 + mPlus5 + mPlus6  >  0)
+
+# setting session timezone to UTC (doesn't work otherwise)
+Sys.setenv(TZ = "UTC")
+
+occasion1 <- meet_traj %>% filter(dt_rounded > "2015-09-20 05:00:00 UTC" & dt_rounded < "2015-09-20 06:00:00 UTC")
+occasion2 <- meet_traj %>% filter(dt_rounded > "2015-09-20 18:00:00 UTC" & dt_rounded < "2015-09-20 21:00:00 UTC")
+occasion3 <- meet_traj %>% filter(dt_rounded > "2015-09-20 19:00:00 UTC" & dt_rounded < "2015-09-20 20:00:00 UTC")
+
+# resetting session timezone
+Sys.setenv(TZ = "")
+```
+
+
+# Plotting the trajectories
 
 
 
