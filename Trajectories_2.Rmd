@@ -52,8 +52,8 @@ ws_amos <- ws %>% filter(TierID == 48)
 ws_caroline_olga_join <- inner_join(ws_caroline, ws_olga, by = "dt_rounded", suffix = c("_caroline", "_olga")) %>% 
                  mutate(distance = sqrt((E_caroline - E_olga)^2 + (N_caroline - N_olga)^2), meet = distance < 30)
 
-ws_franz_amos_join <- inner_join(ws_franz, ws_amos, by = "dt_rounded", suffix = c("_franz", "_amos")) %>% 
-                 mutate(distance = sqrt((E_franz - E_amos)^2 + (N_franz - N_amos)^2), meet = distance < 30)
+# ws_franz_amos_join <- inner_join(ws_franz, ws_amos, by = "dt_rounded", suffix = c("_franz", "_amos")) %>% 
+#                  mutate(distance = sqrt((E_franz - E_amos)^2 + (N_franz - N_amos)^2), meet = distance < 30)
 
 ```
 
@@ -173,6 +173,61 @@ Sys.setenv(TZ = "")
 
 
 # Plotting the trajectories
+
+```{r}
+ggplot(data = occasion1) +
+  geom_path(aes(x = E_caroline, y = N_caroline, fill = TierName_caroline), color = "red") +
+  geom_path(aes(x = E_olga, y = N_olga, fill = TierName_olga), color = "cyan") +
+  geom_point(aes(x = E_caroline, y = N_caroline, fill = TierName_caroline), pch = 21, color = "black") +
+  geom_point(aes(x = E_olga, y = N_olga, fill = TierName_olga), pch = 21, color = "black") +
+  geom_text(aes(x = E_caroline, y = N_caroline, label = rownames(occasion1)), nudge_x = -0.5, nudge_y = 4, check_overlap = TRUE, color = "darkred") +
+  geom_text(aes(x = E_olga, y = N_olga, label = rownames(occasion1)), nudge_x = -0.5, nudge_y = -4, check_overlap = TRUE, color = "darkblue")
+  
+  
+
+
+```
+
+# Occasion 2 (Maybe add 30 or sth to each E_caroline, to make it a bit more visible)
+```{r}
+ggplot(data = occasion2) +
+  geom_path(aes(x = E_caroline, y = N_caroline, fill = TierName_caroline), color = "red") +
+  geom_path(aes(x = E_olga, y = N_olga, fill = TierName_olga), color = "cyan") +
+  geom_point(aes(x = E_caroline, y = N_caroline, fill = TierName_caroline), pch = 21, color = "black") +
+  geom_point(aes(x = E_olga, y = N_olga, fill = TierName_olga), pch = 21, color = "black") +
+  geom_text(aes(x = E_caroline, y = N_caroline, label = rownames(occasion2)), nudge_x = 2, nudge_y = 2, check_overlap = TRUE, color = "darkred") +
+  geom_text(aes(x = E_olga, y = N_olga, label = rownames(occasion2)), nudge_x = -5, nudge_y = 2, check_overlap = TRUE, color = "darkblue")
+
+```
+
+
+# Occasion 3
+```{r}
+ggplot(data = occasion3) +
+  geom_path(aes(x = E_caroline, y = N_caroline, fill = TierName_caroline), color = "red") +
+  geom_path(aes(x = E_olga, y = N_olga, fill = TierName_olga), color = "cyan") +
+  geom_point(aes(x = E_caroline, y = N_caroline, fill = TierName_caroline), pch = 21, color = "black") +
+  geom_point(aes(x = E_olga, y = N_olga, fill = TierName_olga), pch = 21, color = "black") +
+  geom_text(aes(x = E_caroline, y = N_caroline, label = rownames(occasion3)), nudge_x = 0.5, nudge_y = 3, check_overlap = TRUE, color = "darkred") +
+  geom_text(aes(x = E_olga, y = N_olga, label = rownames(occasion3)), nudge_x = -2, nudge_y = 2, check_overlap = TRUE, color = "darkblue")
+
+
+```
+
+
+-> we see around the middle numbers where they are closest to each other. 
+However, as these two females seem to spend some minitues in close proximity, it looks like there is either no aggression or these two animals know and tolerate each other. ?? We assume that these females are not in the same family, as we saw in the territorial analysis, that they seem to have a different territory.
+
+
+
+
+
+
+
+
+
+
+
 
 
 
