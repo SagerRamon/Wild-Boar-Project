@@ -20,6 +20,7 @@ library(dplyr)
 library(ggplot2)      
 library(lubridate)
 library(ggpubr)
+library(data.table)
 ```
 
 
@@ -67,7 +68,7 @@ ggplot() +
 
 ```
 
-# -> that's the result without the filter to points with a 60 second interval!
+# -> that's the result without the filter to points with a 60 second interval! -> Caroline was monitored for a long time with mutliple different sampling intervals.
 
 ```{r, warning=F, message=F}
 rm(list = ls())
