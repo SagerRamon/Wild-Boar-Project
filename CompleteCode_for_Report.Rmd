@@ -245,10 +245,10 @@ rm(list=ls())
 
 ```{r}
 # reloading the Wild Boar data
+ws <- wildschwein_BE                        # complete Dataset of Wild Boar
+metadata <- wildschwein_metadata            # Wild Boar metadata
 
-ws <- wildschwein_BE
-metadata <- wildschwein_metadata
-
+underl_map <- terra::rast("pk100_BE.tif")   # underlay raster map of the region
 ```
 
 
@@ -270,10 +270,112 @@ ws <- ws %>%  subset(select = - c(Study_area))
 ```
 
 
+```{r}
+# Focusing only on these 5 individuals having a sampling interval of 60 seconds
+ws <- ws %>% filter(TierID %in% c(10, 22, 36, 40, 48)) 
+
+```
+
+
+```{r}
+ws_sf <- st_as_sf(ws,
+                coords = c("E", "N"), 
+                crs = 2056)
+
+# ws_sf_nonfactor <- ws_sf
+ws_sf$TierID <- as.factor(ws_sf$TierID)
+```
 
 
 
 
+
+
+
+## Territorial Analysis using the "aggregate" function 
+
+### Function to produce an occurence plot using a grid structure. 
+
+Applicable to any Wild Boar in the Data set and can also handle multiple (or all) animals as inputs, producing a list of plots. After applying the function, these can either be arranged to be viewed and compared together, or each plot can separately be extracted from the plot list.
+```{r}
+grid_agg_plots <- function(data, underl_map, Cellsize){
+  
+  id_list <- unique(data$TierID)
+  plot_list <- vector("list", length(id_list))
+  
+  data <- group_by(data, TierID)
+  
+  for (i in seq(1,length(id_list))){
+    # extracting data of the animal with certain animal ID:
+    ws_temp <- filter(data, TierID == id_list[i])
+    
+    # constructing the Grid by the outermost points of the animal in question
+    grid_area <- st_make_grid(ws_temp, square = FALSE, cellsize = Cellsize, crs = 2056) %>% st_as_sf()
+    
+    # aggregating the gps points to each grid cell
+    grid_agg <- aggregate(x = ws_temp, by = grid_area, FUN = length) %>% select(TierID)
+    
+    # producing the plot
+    p <-  tm_shape(underl_map) +
+                      tm_rgb() +
+                      tm_shape(grid_agg) +
+                      tm_polygons("TierID", alpha = 0.7, style="cont", legend.show = TRUE) +
+                      tm_layout(legend.outside = TRUE)
+      
+    # creating variable & append to plot list
+    var_name <- paste("P", id_list[i], sep = "")
+    
+    # appending to plot list
+    plot_list[[i]] <- assign(var_name, p)
+    
+  }
+  return(plot_list)
+}
+```
+
+
+### running the function on all individuals with 60 second sampling interval in one plot
+```{r}
+plots <- grid_agg_plots(ws_sf, underl_map, 150)
+```
+
+
+### Plot all individuals with 60 second sampling interval in one plot
+```{r, message=FALSE, warning=FALSE, fig.height=16, fig.width=14}
+# may need to adjust size of plot
+
+tmap_mode("plot")           # mode to view plot in plot instead of viewer
+
+Arranged_plots <- tmap_arrange(plots, ncol = 2)   # arranging the plots next to each other
+Arranged_plots
+```
+-> plot representing absolute number of gps points in each grid cell for each animal
+-> plots are in order:    first plot (top left)   = animal with ID 10
+                          second plot (top right) = animal with ID 22
+                          and so on... couldn't figure out how to name the plots
+
+
+### plot animals with ID's: 22 (Miriam) & 36 (Olga) (both females)
+```{r, message=FALSE, warning=FALSE, fig.height=10, fig.width=8}
+ws_females    <- ws_sf %>% filter(TierID %in% c(22,36))
+plots_females <- grid_agg_plots(ws_females, underl_map, 150)
+arr_females   <- tmap_arrange(plots_females, ncol = 1)
+arr_females
+```
+
+
+### plot animals with ID's: 40 (Franz) & 36 (Amos) (both males)
+```{r, message=FALSE, warning=FALSE, fig.height=10, fig.width=8}
+ws_males      <- ws_sf %>% filter(TierID %in% c(40,48))
+plots_males   <- grid_agg_plots(ws_males  , underl_map, 150)
+arr_males     <- tmap_arrange(plots_males  , ncol = 1)
+arr_males
+```
+
+
+
+
+## Territorial Analysis using the "st_join" function -> keeping much more information and seems to be "the wy to go" 
 
 
 
