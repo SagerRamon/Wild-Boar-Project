@@ -208,6 +208,7 @@ mcp_males <- tm_shape(underl_map) +
               
 
 mcp_males
+tmap_mode("plot")
 ```
 
 
@@ -222,6 +223,8 @@ mcp_females <- tm_shape(underl_map) +
                 tm_layout(title = "MCP of all Females")
 
 mcp_females
+
+tmap_mode("plot")
 ```
 -> females very overlapping, however, time of sampling differs
 -> males seem to have larger mcp's
@@ -537,6 +540,8 @@ All_inds <- tm_shape(underl_map) +
                 tm_polygons("n", title = "Amos (48)", alpha = 0.8, style = "cont", palette = "PuRd", n = 30) +
                 tm_layout(title = "Occurence for each Individual")
 All_inds
+
+tmap_mode("plot")
 ```
 
 
@@ -598,6 +603,8 @@ MO <- tm_shape(underl_map) +
         tm_layout(title = "Miriam (22) & Olga (36)", legend.text.size = 0.1)
 
 MO
+
+tmap_mode("plot")
 ```
 
 
@@ -622,6 +629,8 @@ FA <- tm_shape(underl_map) +
         tm_layout(title = "Franz (40) & Amos (48)") 
 
 FA
+
+tmap_mode("plot")
 ```
 
 
@@ -679,7 +688,7 @@ agg_olga_non_forest <- agg_olga %>% filter(forest.x == FALSE) %>% drop_na()
 ```
 
 ```{r}
-
+tmap_mode("view")
 Olga_forest <- tm_shape(underl_map) +
                   tm_rgb() +
                   tm_shape(agg_olga_forest) +
@@ -690,6 +699,8 @@ Olga_forest <- tm_shape(underl_map) +
                   tm_layout(legend.outside = TRUE, title = "Olga (36)")
 
 Olga_forest
+
+tmap_mode("plot")
 ```
 
 
