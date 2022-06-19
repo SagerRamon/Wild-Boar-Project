@@ -106,6 +106,7 @@ ws_60s %>%
 
 ```
 -> around 30000 sampling intervals are within 1 minute
+
 ```{r}
 ws_60s <- ws_60s %>% filter(DatetimeUTC > "2015-01-01" & DatetimeUTC < "2016-01-01")
 
