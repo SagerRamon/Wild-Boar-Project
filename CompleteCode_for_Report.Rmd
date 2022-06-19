@@ -4,6 +4,221 @@ output: html_document
 date: "`r Sys.Date()`"
 ---
 
+```{r, warning=F, message=F}
+rm(list=ls())
+```
+
+# Libraries
+
+```{r, warning=F, message=F}
+library(ComputationalMovementAnalysisData)  # Wild Boar Data 
+library(tidyverse)                          # dplyr, ggplot, etc.
+library(sf)                                 # spatial data operations
+library(tmap)                               # thematic maps for spatial vector data 
+library(terra)                              # spatial raster and vector data operations
+library(gridExtra)                          # functions to work with grids and their visualizations
+library(data.table)                         # functions for easy handling of data frames
+library(lubridate)                          # for easy handling of Datetimes
+library(ggpubr)                             # for ggplot customizations
+
+```
+
+
+```{r, warning=F, message=F}
+ws <- wildschwein_BE                        # complete Dataset of Wild Boar
+metadata <- wildschwein_metadata            # Wild Boar metadata
+```
+
+
+```{r}
+names(ws)                                   # all column names
+
+# removing some unsused columns
+ws <- ws %>% subset(select = - c(day, CollarID, moonilumination))
+
+n_distinct(ws$TierID)                       # 19 Wild Boar
+```
+
+
+```{r}
+# Adding "timelag" column - time between each sampling occasion
+ws <- ws %>% 
+  group_by(TierID) %>% 
+  mutate(timelag = as.integer(difftime(lead(DatetimeUTC), DatetimeUTC, units = "secs"))) %>% 
+  ungroup()
+
+summary(ws$timelag)
+# 19 NA's because of 19 distinct ID's
+```
+
+
+
+
+
+# EDA (Exploratory Data Analysis)
+
+## Exploring Sampling Intervals and timing of samplings for each Wild Boar
+
+```{r}
+ws$TierID <- as.factor(ws$TierID)
+
+p1 <- ws %>% ggplot(aes(x = DatetimeUTC, y = TierID, colour = TierID)) +
+  geom_point(show.legend = F)
+
+p1  
+```
+
+
+```{r}
+range(ws$timelag, na.rm = T)    # range of values in timelag
+nrow(ws)                        # number of observations
+
+# Filtering Rows with unreasonable values
+ws_range <- ws %>% 
+  filter(timelag >= 0 & timelag < 30000)
+  
+
+range(ws_range$timelag, na.rm = T)
+nrow(ws_range)
+
+nrow(ws) - nrow(ws_range)       # 47 values removed
+```
+
+
+### Histograms of sampling interval distribution
+```{r, warning=FALSE}
+ws_range %>% 
+  ggplot(aes(x = timelag)) +
+  geom_histogram(binwidth = 60) +
+  scale_y_log10()
+```
+
+
+```{r, warning=FALSE}
+# filtered for intervals between 0  and 2000 seconds 
+ws_range2 <- ws_range %>% filter(timelag >= 0 & timelag < 2000)
+
+ws_range2 %>% 
+  ggplot(aes(x = timelag)) +
+  geom_histogram(binwidth = 1) +
+  scale_y_log10()    # logarithmic for better visualization of sampling intervals counts
+```
+-> most sampling intervals are between 10 & 20 minutes
+
+
+```{r}
+# Count of 60 second sampling intervals
+ws_60s <- ws_range %>% filter(timelag >= 40 & timelag < 70)
+
+ws_60s %>% 
+  ggplot(aes(x = timelag)) +
+  geom_histogram(binwidth = 1) +
+  scale_y_log10()
+
+```
+-> around 30000 sampling intervals are within 1 minute
+
+```{r}
+ws_60s <- ws_60s %>% filter(DatetimeUTC > "2015-01-01" & DatetimeUTC < "2016-01-01")
+
+p3 <- ws_60s %>% ggplot(aes(x = DatetimeUTC, y = TierID, colour = TierID)) +
+  geom_point(show.legend = F)
+
+p3
+
+```
+-> Animal ID's c(10, 22, 36, 40, 48) have sampling intervals of one minute in overlapping times in the year 2015
+
+```{r}
+# Names of the animals we are interested in, based on their 60 seconds intervals in sampling
+ws_names <- unique(ws_60s$TierName)
+```
+
+
+
+## Pre-Analysis of Location
+
+```{r}
+sf_60s <- st_as_sf(ws_60s, coords = c("E","N"), crs = 2056)
+
+sf_60s_grouped <- group_by(sf_60s, TierID)
+```
+
+```{r}
+sf_60s_smry <- summarise(sf_60s_grouped)
+mcp <- st_convex_hull(sf_60s_smry)
+```
+
+```{r}
+ggplot(mcp, ) + 
+    aes(fill = TierID, alpha = 0.5) +
+    geom_sf() +
+    coord_sf(datum = sf::st_crs(2056))
+```
+-> Overlapping convex-hulls, except Wild Boar with ID 48. Also, sizes apparently differ among sexes (40 & 48 are males).
+
+
+
+# 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
