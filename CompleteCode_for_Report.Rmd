@@ -27,6 +27,8 @@ library(ggpubr)                             # for ggplot customizations
 ```{r, warning=F, message=F}
 ws <- wildschwein_BE                        # complete Dataset of Wild Boar
 metadata <- wildschwein_metadata            # Wild Boar metadata
+
+underl_map <- terra::rast("pk100_BE.tif")   # underlay raster map of the region
 ```
 
 
@@ -158,8 +160,61 @@ ggplot(mcp, ) +
 -> Overlapping convex-hulls, except Wild Boar with ID 48. Also, sizes apparently differ among sexes (40 & 48 are males).
 
 
+## Transforming to SF object and adding Sex to data set from metadata
+```{r}
+ws <- merge(ws, metadata[, c("TierID","Sex")], by = "TierID")
 
-# 
+ws_sf <- st_as_sf(ws,
+                coords = c("E", "N"), 
+                crs = 2056)
+
+ws_sf$TierID <- as.factor(ws_sf$TierID)
+ws_grp <- ws_sf %>% group_by(TierID)
+```
+
+
+# Plotting Convex Hull's of Males and females separately
+```{r}
+# ws_grp -> is a grouped sf object containing all individuals
+# m_grp -> just males
+# f_grp -> just females
+
+m_grp <- ws_grp %>% filter(Sex == "m")
+f_grp <- ws_grp %>% filter(Sex == "f")
+
+m_smry <- summarise(m_grp)
+f_smry <- summarise(f_grp)
+
+m_mcp <- st_convex_hull(m_smry)
+f_mcp <- st_convex_hull(f_smry)
+```
+
+
+```{r}
+tmap_mode("view") # open in viewer for interactive map
+
+#males
+mcp_males <- tm_shape(underl_map) + 
+              tm_rgb() +
+              tm_shape(m_mcp) +
+              tm_polygons("TierID", alpha = 0.5, border.col = "red", legend.show = FALSE)
+
+mcp_males
+```
+
+
+```{r}
+#females
+mcp_females <- tm_shape(underl_map) + 
+                tm_rgb() +
+                tm_shape(f_mcp) +
+                tm_polygons("TierID", alpha = 0.5, border.col = "red", legend.show = FALSE)
+
+mcp_females
+```
+-> females very overlapping, however, time of sampling differs
+-> males seem to have larger mcp's
+-> all mcp's are covering the main forest patch near the lake
 
 
 
@@ -170,6 +225,49 @@ ggplot(mcp, ) +
 
 
 
+
+
+
+# Territorial Analysis
+
+
+## Research Question:
+Can we identify (core) territories of individual Wild Boar in their resting/sleeping sites and feeding grounds?
+
+## Hypothesis
+We expect that we can at least to some extent identify core territories. Given that, we further expect that these territories differ in size between the resting sites (the forest patch) and the feeding grounds (agricultural sites), and among sexes.
+
+
+```{r}
+# removing all the data form memory
+rm(list=ls())
+```
+
+```{r}
+# reloading the Wild Boar data
+
+ws <- wildschwein_BE
+metadata <- wildschwein_metadata
+
+```
+
+
+
+## Data Preparation
+```{r}
+# adding Sex and Study_area from metadata to the data set, removing unused columns
+ws <- merge(ws, metadata[, c("TierID","Sex")], by = "TierID")
+ws <- merge(ws, metadata[, c("TierID","Study_area")], by = "TierID")
+ws <- ws %>% subset(select = - c(CollarID, day, moonilumination))
+
+ws_fin <- ws %>% 
+  filter(Study_area == "Bern")
+# apparently, complete data set already only containing animals from the Bernese study area
+
+# removing this variable and column "study_area" again
+rm(ws_fin)
+ws <- ws %>%  subset(select = - c(Study_area))
+```
 
 
 
