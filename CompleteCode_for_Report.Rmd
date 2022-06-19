@@ -506,6 +506,8 @@ Amos      <- occur_layer_plot(ws_Amos, 150)
 
 #### Occurence plot containing layers for all 5 individuals
 ```{r}
+tmap_mode("view")
+
 All_inds <- tm_shape(underl_map) +
                 tm_rgb() +
               tm_shape(Caroline) +
