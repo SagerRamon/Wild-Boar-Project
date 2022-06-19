@@ -249,6 +249,11 @@ ws <- wildschwein_BE                        # complete Dataset of Wild Boar
 metadata <- wildschwein_metadata            # Wild Boar metadata
 
 underl_map <- terra::rast("pk100_BE.tif")   # underlay raster map of the region
+
+# Loading and preparing Forest Polygon
+st_layers("Feldaufnahmen_Fanel.gpkg")
+forest <- read_sf("Feldaufnahmen_Fanel.gpkg")
+forest <- forest %>% filter(Frucht == "Wald")
 ```
 
 
@@ -458,6 +463,69 @@ Arranged_plots
 
 
 
+### Function to produce an occurence plot containing multiple layers using a grid structure with st_join. 
+
+```{r}
+occur_layer_plot <- function(data, Cellsize){
+  
+  # constructing the Grid by the outermost points of the animal in question
+  grid_area <- st_make_grid(data, square = FALSE, cellsize = Cellsize) %>%  st_as_sf()
+  
+  # Adding unique ID to each cell in the grid
+  grid_area <- grid_area %>% mutate(ID = row_number())
+
+  # join all data points to each grid cell
+  grid_agg <- st_join(data, grid_area, left = FALSE)
+
+  # get number of occurrences in each grid cell
+  by_cell <- grid_agg %>% group_by(ID,TierID) %>% summarise(n = n())
+  
+  # join information in each grid cell to the grid by joining the cell ID's and drop NA, which deletes the rest of the grid
+  new_agg <- st_join(grid_area, by_cell, by = ID) %>% drop_na()
+  
+  # return cell-wise information to be plotted afterwards
+  return(new_agg)
+}
+```
+
+```{r}
+# Filtering each individual
+ws_Caroline <- ws_sf %>% filter(TierID == 10)
+ws_Miriam   <- ws_sf %>% filter(TierID == 22)
+ws_Olga     <- ws_sf %>% filter(TierID == 36)
+ws_Franz    <- ws_sf %>% filter(TierID == 40)
+ws_Amos     <- ws_sf %>% filter(TierID == 48)
+
+# Applying function
+Caroline  <- occur_layer_plot(ws_Caroline, 150)
+Miriam    <- occur_layer_plot(ws_Miriam, 150)
+Olga      <- occur_layer_plot(ws_Olga, 150)
+Franz     <- occur_layer_plot(ws_Franz, 150)
+Amos      <- occur_layer_plot(ws_Amos, 150)
+```
+
+#### Occurence plot containing layers for all 5 individuals
+```{r}
+All_inds <- tm_shape(underl_map) +
+                tm_rgb() +
+              tm_shape(Caroline) +
+                tm_polygons("n", alpha = 0.8, style = "cont", palette = "Blues", n = 30) +
+                tm_layout(legend.show = FALSE)  +
+              tm_shape(Miriam) +
+                tm_polygons("n", alpha = 0.8, style = "cont", palette = "Reds", n = 30) +
+                tm_layout(legend.show = FALSE)  +
+              tm_shape(Olga) +
+                tm_polygons("n", alpha = 0.8, style = "cont", palette = "Greens", n = 30) +
+                tm_layout(legend.show = FALSE)  +
+              tm_shape(Franz) +
+                tm_polygons("n", alpha = 0.8, style = "cont", palette = "Purples", n = 30) +
+                tm_layout(legend.show = FALSE)  +
+              tm_shape(Amos) +
+                tm_polygons("n", alpha = 0.8, style = "cont", palette = "PuRd", n = 30) +
+                tm_layout(legend.show = FALSE)
+All_inds
+```
+
 
 
 
@@ -471,7 +539,7 @@ This is giving us another information about the territory of an individual, as w
 
 Applicable to any Wild Boar in the Data set, but needs to be done for every individual separately. After applying the function, the output will be a data frame containing information about all points within each cell and corresponding animal ID, so that it can afterwards be plotted with a layer for each animal of interest.
 ```{r}
-recurr_layer_plot <- function(data, underl_map, Cellsize){
+recurr_layer_plot <- function(data, Cellsize){
   
   # constructing the Grid by the outermost points of the animal in question
   grid_area <- st_make_grid(data, square = FALSE, cellsize = Cellsize) %>%  st_as_sf()
@@ -482,7 +550,7 @@ recurr_layer_plot <- function(data, underl_map, Cellsize){
   # join all data points to each grid cell
   grid_agg <- st_join(data, grid_area, left = FALSE)
 
-  # get number of occurrences in each grid cell
+  # get number of reccurrences to each grid cell
   by_cell <- grid_agg %>% mutate(logic = ifelse(ID == lag(ID), TRUE, FALSE)) %>% group_by(ID) %>% count(logic) %>% filter(logic == FALSE)
 
   # join information in each grid cell to the grid by joining the cell ID's and drop NA, which deletes the rest of the grid
@@ -498,10 +566,10 @@ recurr_layer_plot <- function(data, underl_map, Cellsize){
 ### plot animals with ID's: 22 (Miriam, Blue) & 36 (Olga, Red) (both females)
 ```{r}
 ws_sf_miriam <- ws_sf %>% filter(TierID %in% c(22)) %>% select(DatetimeUTC, TierID)
-Miriam <- recurr_layer_plot(ws_sf_miriam, underl_map, 100)
+Miriam <- recurr_layer_plot(ws_sf_miriam, 100)
 
 ws_sf_olga <- ws_sf %>% filter(TierID %in% c(36)) %>% select(DatetimeUTC, TierID)
-Olga <- recurr_layer_plot(ws_sf_olga, underl_map, 100)
+Olga <- recurr_layer_plot(ws_sf_olga, 100)
 ```
 
 
@@ -524,10 +592,10 @@ MO
 ### plot animals with ID's: 40 (Franz, Blue) & 36 (Amos, Red) (both males)
 ```{r}
 ws_sf_franz <- ws_sf %>% filter(TierID %in% c(40)) %>% select(DatetimeUTC, TierID)
-Franz <- recurr_layer_plot(ws_sf_franz, underl_map, 100)
+Franz <- recurr_layer_plot(ws_sf_franz, 100)
 
 ws_sf_amos <- ws_sf %>% filter(TierID %in% c(48)) %>% select(DatetimeUTC, TierID)
-Amos <- recurr_layer_plot(ws_sf_amos, underl_map, 100)
+Amos <- recurr_layer_plot(ws_sf_amos, 100)
 
 ```
 
@@ -544,6 +612,238 @@ FA <- tm_shape(underl_map) +
 
 FA
 ```
+
+
+
+
+
+
+## Separating Forest habitat and feeding grounds
+
+Here, applied only to absolute occurrences for now, but would be also applicable to recurrences
+```{r}
+forest_separation_fun <- function(data, Cellsize, forest_polygon){
+  
+  # constructing the Grid by the outermost points of the animal in question
+  grid_area <- st_make_grid(data, square = FALSE, cellsize = Cellsize) %>%  st_as_sf()
+  
+  # returns True/False for points in forest
+  intersects <- st_intersects(grid_area,  forest)
+  
+  # Additional column in grid_area with T/F for Forest
+  grid_area$forest <- sapply(intersects, FUN = length) > 0
+  
+  # Adding unique ID to each cell in the grid
+  grid_area <- grid_area %>% mutate(ID = row_number())
+  
+  # join all data points to each grid cell
+  grid_agg <- st_join(data, grid_area, left = FALSE)
+
+  # get number of occurrences in each grid cell and group by forest
+  by_cell <- grid_agg %>% group_by(ID, forest) %>% summarise(n = n())
+
+  # join information in each grid cell to the grid by joining the cell ID's and drop NA, which deletes the rest of the grid
+  new_agg <- st_join(grid_area, by_cell) %>% drop_na()
+  
+  # return cell-wise information to be plotted afterwards
+  return(new_agg)
+  
+}
+
+
+```
+
+
+### Example plot for wild boar Olga
+```{r}
+# selecting Olga (36)
+ws_sf_olga <- ws_sf %>% filter(TierID %in% c(36)) %>% select(DatetimeUTC, TierID)
+
+# applying function
+agg_olga <- forest_separation_fun(ws_sf_olga, 150, forest)
+
+# splitting forsest and non_forest
+agg_olga_forest     <- agg_olga %>% filter(forest.x == TRUE) %>% drop_na()
+agg_olga_non_forest <- agg_olga %>% filter(forest.x == FALSE) %>% drop_na()
+```
+
+```{r}
+
+Olga_forest <- tm_shape(underl_map) +
+                  tm_rgb() +
+                  tm_shape(agg_olga_forest) +
+                  tm_polygons("n", alpha = 0.8, style = "cont", n = 30, palette = "Greens", n = 100, contrast = c(0.35, 0.9)) +
+                  tm_borders(col = "black", lwd = 1, lty = "solid") +
+                  tm_shape(agg_olga_non_forest) +
+                  tm_polygons("n", alpha = 0.8, style = "cont", n = 30, palette = "Reds", n = 100, contrast = c(0.35, 0.9)) +
+                  tm_layout(legend.outside = TRUE)
+
+Olga_forest
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Analysis of Meeting occasions and trajectories before and after such an event
+
+## Research Question
+
+## Hypothesis
+
+
+```{r}
+# removing all the data form memory
+rm(list=ls())
+```
+
+```{r}
+# reloading the Wild Boar data
+ws <- wildschwein_BE                        # complete Dataset of Wild Boar
+metadata <- wildschwein_metadata            # Wild Boar metadata
+```
+
+```{r}
+# adding Sex and Study_area from metadata to the data set, removing unused columns
+ws <- merge(ws, metadata[, c("TierID","Sex")], by = "TierID")
+ws <- merge(ws, metadata[, c("TierID","Study_area")], by = "TierID")
+ws <- ws %>% subset(select = - c(CollarID, day, moonilumination))
+
+# Adding "timelag" column - time between each sampling occasion
+ws <- ws %>% 
+  group_by(TierID) %>% 
+  mutate(timelag = as.integer(difftime(lead(DatetimeUTC), DatetimeUTC, units = "secs"))) %>% 
+  ungroup()
+
+# Focusing only on these 5 individuals having a sampling interval of 60 seconds
+ws <- ws %>% filter(TierID %in% c(10, 22, 36, 40, 48)) 
+
+# rounding datetime to minutes for easier detection of meetups
+ws <- ws %>% mutate(dt_rounded = round_date(DatetimeUTC, unit = "minute"))
+
+# filter to 60 seconds interval
+ws <- ws %>% filter(timelag >= 50 & timelag < 70)
+```
+
+
+(Here it is missing how we detected which animals meet, i don't know how you did it. I guess visually between each parir of individuals?)
+
+
+## Visualization of meet-ups between Caroline and Olga
+
+```{r}
+# filtering for Miriam and Olga
+ws_caroline <- ws %>% filter(TierID == 10)
+ws_olga     <- ws %>% filter(TierID == 36)
+
+# joining the data of Olga and Miriam and detect meet ups by a threshold of 30 meters
+ws_caroline_olga_join <- inner_join(ws_caroline, ws_olga, by = "dt_rounded", suffix = c("_caroline", "_olga")) %>% 
+                 mutate(distance = sqrt((E_caroline - E_olga)^2 + (N_caroline - N_olga)^2), meet = distance < 30)
+
+```
+
+
+### Plot to visualize points of meet-ups
+```{r}
+ggplot() +
+  geom_point(data = ws_caroline, aes(x = E, y = N, color = TierName),  alpha = 0.1, size = 0.5) +
+  geom_point(data = ws_olga, aes(x = E, y = N, color = TierName), alpha = 0.1, size = 0.5) +
+  geom_point(data = ws_caroline_olga_join %>%  filter(meet == TRUE), aes(x = E_caroline, y = N_caroline, fill = TierName_caroline), pch = 21, color = "black") +
+  geom_point(data = ws_caroline_olga_join %>%  filter(meet == TRUE), aes(x = E_olga, y = N_olga, fill = TierName_olga), pch = 21, color = "black")
+```
+
+
+### Plotting Trajectories before and after meet-up (+/- 6 minutes)
+```{r}
+# extracting the points before and after meet-up (+/- 6 minutes)
+ws_caroline_olga_join <- ws_caroline_olga_join %>% mutate(
+  #
+  mMinus6 = shift(meet, 6, type = "lead"),
+  mMinus5 = shift(meet, 5, type = "lead"),
+  mMinus4 = shift(meet, 4, type = "lead"),
+  mMinus3 = shift(meet, 3, type = "lead"),
+  mMinus2 = shift(meet, 2, type = "lead"),
+  mMinus1 = shift(meet, 1, type = "lead"),
+  mPlus1  = shift(meet, 1, type = "lag"),
+  mPlus2  = shift(meet, 2, type = "lag"),
+  mPlus3  = shift(meet, 3, type = "lag"),
+  mPlus4  = shift(meet, 4, type = "lag"),
+  mPlus5  = shift(meet, 5, type = "lag"),
+  mPlus6  = shift(meet, 6, type = "lag"),
+  #
+)
+
+# filtering for all points, where at least one of the columns for +/- 6 minutes contains a TRUE
+meet_traj <- ws_caroline_olga_join %>% filter( mMinus6 + mMinus5 + mMinus4 + mMinus3 + mMinus2 + mMinus1 + 
+                                                 mPlus1 + mPlus2 + mPlus3 + mPlus4 + mPlus5 + mPlus6  >  0)
+
+# setting session timezone to UTC (doesn't work otherwise)
+Sys.setenv(TZ = "UTC")
+
+# splitting up each meeting occasion
+occasion1 <- meet_traj %>% filter(dt_rounded > "2015-09-20 05:00:00 UTC" & dt_rounded < "2015-09-20 06:00:00 UTC")
+occasion2 <- meet_traj %>% filter(dt_rounded > "2015-09-20 18:00:00 UTC" & dt_rounded < "2015-09-20 21:00:00 UTC")
+occasion3 <- meet_traj %>% filter(dt_rounded > "2015-09-20 19:00:00 UTC" & dt_rounded < "2015-09-20 20:00:00 UTC")
+
+# resetting session timezone
+Sys.setenv(TZ = "")
+```
+
+
+#### Plots
+```{r}
+# Occasion 1
+ggplot(data = occasion1) +
+  geom_path(aes(x = E_caroline, y = N_caroline, fill = TierName_caroline), color = "red") +
+  geom_path(aes(x = E_olga, y = N_olga, fill = TierName_olga), color = "cyan") +
+  geom_point(aes(x = E_caroline, y = N_caroline, fill = TierName_caroline), pch = 21, color = "black") +
+  geom_point(aes(x = E_olga, y = N_olga, fill = TierName_olga), pch = 21, color = "black") +
+  geom_text(aes(x = E_caroline, y = N_caroline, label = rownames(occasion1)), nudge_x = -0.5, nudge_y = 4, check_overlap = TRUE, color = "darkred") +
+  geom_text(aes(x = E_olga, y = N_olga, label = rownames(occasion1)), nudge_x = -0.5, nudge_y = -4, check_overlap = TRUE, color = "darkblue")
+
+```
+
+```{r}
+# Occasion 2
+ggplot(data = occasion2) +
+  geom_path(aes(x = E_caroline, y = N_caroline, fill = TierName_caroline), color = "red") +
+  geom_path(aes(x = E_olga, y = N_olga, fill = TierName_olga), color = "cyan") +
+  geom_point(aes(x = E_caroline, y = N_caroline, fill = TierName_caroline), pch = 21, color = "black") +
+  geom_point(aes(x = E_olga, y = N_olga, fill = TierName_olga), pch = 21, color = "black") +
+  geom_text(aes(x = E_caroline, y = N_caroline, label = rownames(occasion2)), nudge_x = 2, nudge_y = 2, check_overlap = TRUE, color = "darkred") +
+  geom_text(aes(x = E_olga, y = N_olga, label = rownames(occasion2)), nudge_x = -5, nudge_y = 2, check_overlap = TRUE, color = "darkblue")
+
+```
+
+```{r}
+# Occasion 3
+ggplot(data = occasion3) +
+  geom_path(aes(x = E_caroline, y = N_caroline, fill = TierName_caroline), color = "red") +
+  geom_path(aes(x = E_olga, y = N_olga, fill = TierName_olga), color = "cyan") +
+  geom_point(aes(x = E_caroline, y = N_caroline, fill = TierName_caroline), pch = 21, color = "black") +
+  geom_point(aes(x = E_olga, y = N_olga, fill = TierName_olga), pch = 21, color = "black") +
+  geom_text(aes(x = E_caroline, y = N_caroline, label = rownames(occasion3)), nudge_x = 0.5, nudge_y = 3, check_overlap = TRUE, color = "darkred") +
+  geom_text(aes(x = E_olga, y = N_olga, label = rownames(occasion3)), nudge_x = -2, nudge_y = 2, check_overlap = TRUE, color = "darkblue")
+
+```
+-> we see around the middle numbers where they are closest to each other. 
+However, as these two females seem to spend some minitues in close proximity, it looks like there is either no aggression or these two animals know and tolerate each other. ?? We assume that these females are not in the same family, as we saw in the territorial analysis, that they seem to have a different territory.
+
+
+
+
+
+
+
+
 
 
 
