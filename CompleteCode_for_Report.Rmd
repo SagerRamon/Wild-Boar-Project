@@ -129,7 +129,7 @@ ws_60s <- ws_60s %>% filter(DatetimeUTC > "2015-01-01" & DatetimeUTC < "2016-01-
 
 p3 <- ws_60s %>% ggplot(aes(x = DatetimeUTC, y = TierID, colour = TierID)) +
   geom_point(show.legend = F) +
-  ggtitle("Sampling overlaps among these Individuals")
+  ggtitle("Sampling overlaps among the 5 Individuals of interest")
 
 p3
 
@@ -503,7 +503,7 @@ occur_layer_plot <- function(data, Cellsize){
 }
 ```
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 # Filtering each individual
 ws_Caroline <- ws_sf %>% filter(TierID == 10)
 ws_Miriam   <- ws_sf %>% filter(TierID == 22)
