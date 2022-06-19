@@ -294,12 +294,13 @@ ws_sf$TierID <- as.factor(ws_sf$TierID)
 
 ## Territorial Analysis using the "aggregate" function 
 
-### Function to produce an occurence plot using a grid structure. 
+### Function to produce an occurence plot using a grid structure with aggregate. 
 
 Applicable to any Wild Boar in the Data set and can also handle multiple (or all) animals as inputs, producing a list of plots. After applying the function, these can either be arranged to be viewed and compared together, or each plot can separately be extracted from the plot list.
 ```{r}
 grid_agg_plots <- function(data, underl_map, Cellsize){
   
+  # get ID's in input data and produce an empty list
   id_list <- unique(data$TierID)
   plot_list <- vector("list", length(id_list))
   
@@ -375,7 +376,84 @@ arr_males
 
 
 
-## Territorial Analysis using the "st_join" function -> keeping much more information and seems to be "the wy to go" 
+
+
+## Territorial Analysis using the "st_join" function -> keeping much more information and seems to be "the way to go" 
+
+### Function to produce an occurence plot using a grid structure with st_join. 
+
+Big advantage of this method compared to using "aggregate", is that we can recover a lot of information that would get lost in the aggregate function. Here, we did it in a way so we can keep information about Animal ID. Later, in the section about "Recurrence", we are able to keep information about datetime and additional logical information to construct recurrences to a specific cell in the grid using the st_join method.
+
+Applicable to any Wild Boar in the Data set and can also handle multiple (or all) animals as inputs, producing a list of plots. After applying the function, these can either be arranged to be viewed and compared together, or each plot can separately be extracted from the plot list.
+```{r}
+
+grid_join_plots <- function(data, underl_map, Cellsize){
+
+  # get ID's in input data and produce an empty list
+  id_list <- unique(data$TierID)
+  plot_list <- vector("list", length(id_list))
+  
+  data <- group_by(data, TierID)
+  
+  for (i in seq(1,length(id_list))){
+    
+    # extracting data of the animal with certain animal ID:
+    ws_temp <- filter(data, TierID == id_list[i]) %>% select(DatetimeUTC, TierID)
+    
+    # constructing the Grid by the outermost points of the animal in question
+    grid_area <- st_make_grid(ws_temp, square = FALSE, cellsize = Cellsize, crs = 2056) %>% st_as_sf()
+    
+    # Adding unique ID to each cell in the grid
+    grid_area <- grid_area %>% mutate(ID = row_number())
+    
+    # join all data points to each grid cell
+    grid_agg <- st_join(ws_temp, grid_area, left = FALSE)
+    
+    # get number of occurrences in each grid cell
+    by_cell <- grid_agg %>% group_by(ID,TierID) %>% summarise(n = n())
+    
+    # join information in each grid cell to the grid by joining the cell ID's
+    new_agg <- st_join(grid_area, by_cell)
+    
+    # produce individual plot 
+    p <-  tm_shape(underl_map) +
+                      tm_rgb() +
+                      tm_shape(new_agg) +
+                      tm_polygons("n", alpha = 0.8, style = "cont", legend.show = TRUE) +
+                      tm_layout(legend.outside = TRUE)
+
+    # creating variable & append to plot list
+    var_name <- paste("P", id_list[i], sep = "")
+
+    # appending to plot list
+    plot_list[[i]] <- assign(var_name, p)
+
+  }
+  return(plot_list)
+  # return(grid_agg)
+}
+```
+
+
+### running the function on all individuals with 60 second sampling interval in one plot
+```{r}
+plots <- grid_join_plots(ws_sf, underl_map, 150)
+```
+
+
+### Plot all individuals with 60 second sampling interval in one plot
+```{r, message=FALSE, warning=FALSE, fig.height=16, fig.width=14}
+# may need to adjust size of plot
+
+tmap_mode("plot")           # mode to view plot in plot instead of viewer
+
+Arranged_plots <- tmap_arrange(plots, ncol = 2)   # arranging the plots next to each other
+Arranged_plots
+```
+-> plot representing absolute number of gps points in each grid cell for each animal
+-> plots are in order:    first plot (top left)   = animal with ID 10
+                          second plot (top right) = animal with ID 22
+                          and so on... couldn't figure out how to name the plots
 
 
 
@@ -384,11 +462,9 @@ arr_males
 
 
 
+## Analysis of recurrences to each grid cell by an individual wild boar.
 
-
-
-
-
+This is giving us another information about the territory of an individual, as we can see which cells were repeatedly visited and seem to represent the main sleeping (in resting territories) and feeding (in the feeding grounds) territories of the wild boar.
 
 
 
