@@ -134,7 +134,8 @@ B <- tm_shape(underl_map) +
 
 ## -> As there are cells with 7'000 observations, the scaling is weird and cells with a few hundred obs are same colour as cells with 2 obs !
 # -> maybe log scale ?   or sqrt scale ?
-      
+
+B
 
 ```
 

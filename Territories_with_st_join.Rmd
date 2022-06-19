@@ -154,39 +154,12 @@ tm_shape(underl_map) +
 ws_sf_dt <- ws_sf %>% filter(TierID %in% c(48)) %>% select(DatetimeUTC, TierID)
 
 plots <- grid_join_plots(ws_sf_dt, underl_map, 100)
+```
 
+
+```{r}
+tmap_mode("view")
 plots
-
-```
-
-
-
-
-
-
-
-
-
-- How do we filter the points between forest and not forest
-- What could be a solution 
-```{r}
-
-```
-
-
-forest - grid
-
-```{r}
-st_layers("Feldaufnahmen_Fanel.gpkg")
-
-forest <- read_sf("Feldaufnahmen_Fanel.gpkg")
-
-forest <- forest %>% filter(Frucht == "Wald")
-
-
-intersects <- st_intersects(grid_area,  forest)
-
-grid_area$wald <- sapply(intersects, FUN = length) > 0
 
 ```
 
