@@ -65,7 +65,8 @@ summary(ws$timelag)
 ws$TierID <- as.factor(ws$TierID)
 
 p1 <- ws %>% ggplot(aes(x = DatetimeUTC, y = TierID, colour = TierID)) +
-  geom_point(show.legend = F)
+  geom_point(show.legend = F) +
+  ggtitle("Sampling time of all Individuals")
 
 p1  
 ```
@@ -92,7 +93,8 @@ nrow(ws) - nrow(ws_range)       # 47 values removed
 ws_range %>% 
   ggplot(aes(x = timelag)) +
   geom_histogram(binwidth = 60) +
-  scale_y_log10()
+  scale_y_log10() +
+  ggtitle("log histogram of sampling intervals")
 ```
 
 
@@ -103,7 +105,8 @@ ws_range2 <- ws_range %>% filter(timelag >= 0 & timelag < 2000)
 ws_range2 %>% 
   ggplot(aes(x = timelag)) +
   geom_histogram(binwidth = 1) +
-  scale_y_log10()    # logarithmic for better visualization of sampling intervals counts
+  scale_y_log10() +    # logarithmic for better visualization of sampling intervals counts
+  ggtitle("log histogram of sampling intervals < 2000s")
 ```
 -> most sampling intervals are between 10 & 20 minutes
 
@@ -115,7 +118,8 @@ ws_60s <- ws_range %>% filter(timelag >= 40 & timelag < 70)
 ws_60s %>% 
   ggplot(aes(x = timelag)) +
   geom_histogram(binwidth = 1) +
-  scale_y_log10()
+  scale_y_log10() +
+  ggtitle("log histogram of sampling intervals < 70s")
 
 ```
 -> around 30000 sampling intervals are within 1 minute
@@ -124,7 +128,8 @@ ws_60s %>%
 ws_60s <- ws_60s %>% filter(DatetimeUTC > "2015-01-01" & DatetimeUTC < "2016-01-01")
 
 p3 <- ws_60s %>% ggplot(aes(x = DatetimeUTC, y = TierID, colour = TierID)) +
-  geom_point(show.legend = F)
+  geom_point(show.legend = F) +
+  ggtitle("Sampling overlaps among these Individuals")
 
 p3
 
@@ -155,7 +160,8 @@ mcp <- st_convex_hull(sf_60s_smry)
 ggplot(mcp, ) + 
     aes(fill = TierID, alpha = 0.5) +
     geom_sf() +
-    coord_sf(datum = sf::st_crs(2056))
+    coord_sf(datum = sf::st_crs(2056)) +
+    ggtitle("MCP of all 5 Individuals of interest")
 ```
 -> Overlapping convex-hulls, except Wild Boar with ID 48. Also, sizes apparently differ among sexes (40 & 48 are males).
 
@@ -197,18 +203,23 @@ tmap_mode("view") # open in viewer for interactive map
 mcp_males <- tm_shape(underl_map) + 
               tm_rgb() +
               tm_shape(m_mcp) +
-              tm_polygons("TierID", alpha = 0.5, border.col = "red", legend.show = FALSE)
+              tm_polygons("TierID", alpha = 0.5, border.col = "red", legend.show = FALSE) +
+              tm_layout(title = "MCP of all Males")
+              
 
 mcp_males
 ```
 
 
 ```{r}
-#females
+tmap_mode("view") # open in viewer for interactive map
+
+#females 
 mcp_females <- tm_shape(underl_map) + 
                 tm_rgb() +
                 tm_shape(f_mcp) +
-                tm_polygons("TierID", alpha = 0.5, border.col = "red", legend.show = FALSE)
+                tm_polygons("TierID", alpha = 0.5, border.col = "red", legend.show = FALSE) +
+                tm_layout(title = "MCP of all Females")
 
 mcp_females
 ```
@@ -321,12 +332,15 @@ grid_agg_plots <- function(data, underl_map, Cellsize){
     # aggregating the gps points to each grid cell
     grid_agg <- aggregate(x = ws_temp, by = grid_area, FUN = length) %>% select(TierID)
     
+    # Name for title
+    plot_title <- paste("TierID = ", ws_temp$TierID, sep = "")
+    
     # producing the plot
     p <-  tm_shape(underl_map) +
                       tm_rgb() +
                       tm_shape(grid_agg) +
                       tm_polygons("TierID", alpha = 0.7, style="cont", legend.show = TRUE) +
-                      tm_layout(legend.outside = TRUE)
+                      tm_layout(legend.outside = TRUE, title = plot_title)
       
     # creating variable & append to plot list
     var_name <- paste("P", id_list[i], sep = "")
@@ -420,12 +434,15 @@ grid_join_plots <- function(data, underl_map, Cellsize){
     # join information in each grid cell to the grid by joining the cell ID's
     new_agg <- st_join(grid_area, by_cell)
     
+    # Name for title
+    plot_title <- paste("TierID = ", ws_temp$TierID, sep = "")
+    
     # produce individual plot 
     p <-  tm_shape(underl_map) +
                       tm_rgb() +
                       tm_shape(new_agg) +
                       tm_polygons("n", alpha = 0.8, style = "cont", legend.show = TRUE) +
-                      tm_layout(legend.outside = TRUE)
+                      tm_layout(legend.outside = TRUE, title = plot_title)
 
     # creating variable & append to plot list
     var_name <- paste("P", id_list[i], sep = "")
@@ -456,9 +473,7 @@ Arranged_plots <- tmap_arrange(plots, ncol = 2)   # arranging the plots next to 
 Arranged_plots
 ```
 -> plot representing absolute number of gps points in each grid cell for each animal
--> plots are in order:    first plot (top left)   = animal with ID 10
-                          second plot (top right) = animal with ID 22
-                          and so on... couldn't figure out how to name the plots
+
 
 
 
@@ -511,20 +526,16 @@ tmap_mode("view")
 All_inds <- tm_shape(underl_map) +
                 tm_rgb() +
               tm_shape(Caroline) +
-                tm_polygons("n", alpha = 0.8, style = "cont", palette = "Blues", n = 30) +
-                tm_layout(legend.show = FALSE)  +
+                tm_polygons("n", title = "Caroline (10)", alpha = 0.8, style = "cont", palette = "Blues", n = 30) +
               tm_shape(Miriam) +
-                tm_polygons("n", alpha = 0.8, style = "cont", palette = "Reds", n = 30) +
-                tm_layout(legend.show = FALSE)  +
+                tm_polygons("n", title = "Miriam (22)", alpha = 0.8, style = "cont", palette = "Reds", n = 30) +
               tm_shape(Olga) +
-                tm_polygons("n", alpha = 0.8, style = "cont", palette = "Greens", n = 30) +
-                tm_layout(legend.show = FALSE)  +
+                tm_polygons("n", title = "Olga (36)", alpha = 0.8, style = "cont", palette = "Greens", n = 30) +
               tm_shape(Franz) +
-                tm_polygons("n", alpha = 0.8, style = "cont", palette = "Purples", n = 30) +
-                tm_layout(legend.show = FALSE)  +
+                tm_polygons("n", title = "Franz (40)", alpha = 0.8, style = "cont", palette = "Purples", n = 30) +
               tm_shape(Amos) +
-                tm_polygons("n", alpha = 0.8, style = "cont", palette = "PuRd", n = 30) +
-                tm_layout(legend.show = FALSE)
+                tm_polygons("n", title = "Amos (48)", alpha = 0.8, style = "cont", palette = "PuRd", n = 30) +
+                tm_layout(title = "Occurence for each Individual")
 All_inds
 ```
 
@@ -581,11 +592,10 @@ tmap_mode("view")
 MO <- tm_shape(underl_map) +
         tm_rgb() +
         tm_shape(Miriam) +
-        tm_polygons("n", alpha = 0.8, style = "cont", palette = "Blues", n = 30) +
-        tm_layout(legend.show = FALSE)  +
+        tm_polygons("n", title = "Miriam (22)", alpha = 0.8, style = "cont", palette = "Blues", n = 30) +
         tm_shape(Olga) +
-        tm_polygons("n", alpha = 0.8, style = "cont", palette = "Reds", n = 30) +
-        tm_layout(legend.show = FALSE)
+        tm_polygons("n", title = "Olga (36)", alpha = 0.8, style = "cont", palette = "Reds", n = 30) +
+        tm_layout(title = "Miriam (22) & Olga (36)", legend.text.size = 0.1)
 
 MO
 ```
@@ -606,11 +616,10 @@ Amos <- recurr_layer_plot(ws_sf_amos, 100)
 FA <- tm_shape(underl_map) +
         tm_rgb() +
         tm_shape(Franz) +
-        tm_polygons("n", alpha = 0.8, style = "cont", palette = "Blues", n = 30) +
-        tm_layout(legend.show = FALSE)  +
+        tm_polygons("n", title = "Franz (40)", alpha = 0.8, style = "cont", palette = "Blues", n = 30) +
         tm_shape(Amos) +
-        tm_polygons("n", alpha = 0.8, style = "cont", palette = "Reds", n = 30) +
-        tm_layout(legend.show = FALSE)
+        tm_polygons("n", title = "Amos (48)", alpha = 0.8, style = "cont", palette = "Reds", n = 30) +
+        tm_layout(title = "Franz (40) & Amos (48)") 
 
 FA
 ```
@@ -674,11 +683,11 @@ agg_olga_non_forest <- agg_olga %>% filter(forest.x == FALSE) %>% drop_na()
 Olga_forest <- tm_shape(underl_map) +
                   tm_rgb() +
                   tm_shape(agg_olga_forest) +
-                  tm_polygons("n", alpha = 0.8, style = "cont", n = 30, palette = "Greens", n = 100, contrast = c(0.35, 0.9)) +
+                  tm_polygons("n", title = "Forest", alpha = 0.8, style = "cont", n = 30, palette = "Greens", n = 100, contrast = c(0.35, 0.9)) +
                   tm_borders(col = "black", lwd = 1, lty = "solid") +
                   tm_shape(agg_olga_non_forest) +
-                  tm_polygons("n", alpha = 0.8, style = "cont", n = 30, palette = "Reds", n = 100, contrast = c(0.35, 0.9)) +
-                  tm_layout(legend.outside = TRUE)
+                  tm_polygons("n", title = "Not Forest", alpha = 0.8, style = "cont", n = 30, palette = "Reds", n = 100, contrast = c(0.35, 0.9)) +
+                  tm_layout(legend.outside = TRUE, title = "Olga (36)")
 
 Olga_forest
 ```
@@ -759,7 +768,8 @@ ggplot() +
   geom_point(data = ws_caroline, aes(x = E, y = N, color = TierName),  alpha = 0.1, size = 0.5) +
   geom_point(data = ws_olga, aes(x = E, y = N, color = TierName), alpha = 0.1, size = 0.5) +
   geom_point(data = ws_caroline_olga_join %>%  filter(meet == TRUE), aes(x = E_caroline, y = N_caroline, fill = TierName_caroline), pch = 21, color = "black") +
-  geom_point(data = ws_caroline_olga_join %>%  filter(meet == TRUE), aes(x = E_olga, y = N_olga, fill = TierName_olga), pch = 21, color = "black")
+  geom_point(data = ws_caroline_olga_join %>%  filter(meet == TRUE), aes(x = E_olga, y = N_olga, fill = TierName_olga), pch = 21, color = "black") +
+  ggtitle("Meeting points between Caroline & Olga")
 ```
 
 
@@ -809,7 +819,8 @@ ggplot(data = occasion1) +
   geom_point(aes(x = E_caroline, y = N_caroline, fill = TierName_caroline), pch = 21, color = "black") +
   geom_point(aes(x = E_olga, y = N_olga, fill = TierName_olga), pch = 21, color = "black") +
   geom_text(aes(x = E_caroline, y = N_caroline, label = rownames(occasion1)), nudge_x = -0.5, nudge_y = 4, check_overlap = TRUE, color = "darkred") +
-  geom_text(aes(x = E_olga, y = N_olga, label = rownames(occasion1)), nudge_x = -0.5, nudge_y = -4, check_overlap = TRUE, color = "darkblue")
+  geom_text(aes(x = E_olga, y = N_olga, label = rownames(occasion1)), nudge_x = -0.5, nudge_y = -4, check_overlap = TRUE, color = "darkblue") +
+  ggtitle("Trajectories around first meeting event")
 
 ```
 
@@ -821,7 +832,8 @@ ggplot(data = occasion2) +
   geom_point(aes(x = E_caroline, y = N_caroline, fill = TierName_caroline), pch = 21, color = "black") +
   geom_point(aes(x = E_olga, y = N_olga, fill = TierName_olga), pch = 21, color = "black") +
   geom_text(aes(x = E_caroline, y = N_caroline, label = rownames(occasion2)), nudge_x = 2, nudge_y = 2, check_overlap = TRUE, color = "darkred") +
-  geom_text(aes(x = E_olga, y = N_olga, label = rownames(occasion2)), nudge_x = -5, nudge_y = 2, check_overlap = TRUE, color = "darkblue")
+  geom_text(aes(x = E_olga, y = N_olga, label = rownames(occasion2)), nudge_x = -5, nudge_y = 2, check_overlap = TRUE, color = "darkblue") +
+  ggtitle("Trajectories around second meeting event")
 
 ```
 
@@ -833,7 +845,8 @@ ggplot(data = occasion3) +
   geom_point(aes(x = E_caroline, y = N_caroline, fill = TierName_caroline), pch = 21, color = "black") +
   geom_point(aes(x = E_olga, y = N_olga, fill = TierName_olga), pch = 21, color = "black") +
   geom_text(aes(x = E_caroline, y = N_caroline, label = rownames(occasion3)), nudge_x = 0.5, nudge_y = 3, check_overlap = TRUE, color = "darkred") +
-  geom_text(aes(x = E_olga, y = N_olga, label = rownames(occasion3)), nudge_x = -2, nudge_y = 2, check_overlap = TRUE, color = "darkblue")
+  geom_text(aes(x = E_olga, y = N_olga, label = rownames(occasion3)), nudge_x = -2, nudge_y = 2, check_overlap = TRUE, color = "darkblue") +
+  ggtitle("Trajectories around third meeting event")
 
 ```
 -> we see around the middle numbers where they are closest to each other. 
