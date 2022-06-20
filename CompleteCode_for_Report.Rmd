@@ -3,7 +3,7 @@ title: "CompleteCode_for_Report"
 output: html_document
 date: "`r Sys.Date()`"
 editor_options: 
-  chunk_output_type: console
+  chunk_output_type: inline
 ---
 
 ```{r, warning=F, message=F}
