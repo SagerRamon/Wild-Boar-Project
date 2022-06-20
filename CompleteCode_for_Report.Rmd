@@ -528,15 +528,15 @@ tmap_mode("view")
 All_inds <- tm_shape(underl_map) +
                 tm_rgb() +
               tm_shape(Caroline) +
-                tm_polygons("n", title = "Caroline (10)", alpha = 0.8, style = "cont", palette = "Blues", n = 30) +
+                tm_polygons("n", title = "Caroline (10)", alpha = 0.8, style = "cont", palette = "Blues", n = 30, popup.vars=c("Occurences:"="n")) +
               tm_shape(Miriam) +
-                tm_polygons("n", title = "Miriam (22)", alpha = 0.8, style = "cont", palette = "Reds", n = 30) +
+                tm_polygons("n", title = "Miriam (22)", alpha = 0.8, style = "cont", palette = "Reds", n = 30, popup.vars=c("Occurences:"="n")) +
               tm_shape(Olga) +
-                tm_polygons("n", title = "Olga (36)", alpha = 0.8, style = "cont", palette = "Greens", n = 30) +
+                tm_polygons("n", title = "Olga (36)", alpha = 0.8, style = "cont", palette = "Greens", n = 30, popup.vars=c("Occurences:"="n")) +
               tm_shape(Franz) +
-                tm_polygons("n", title = "Franz (40)", alpha = 0.8, style = "cont", palette = "Purples", n = 30) +
+                tm_polygons("n", title = "Franz (40)", alpha = 0.8, style = "cont", palette = "Purples", n = 30, popup.vars=c("Occurences:"="n")) +
               tm_shape(Amos) +
-                tm_polygons("n", title = "Amos (48)", alpha = 0.8, style = "cont", palette = "PuRd", n = 30) +
+                tm_polygons("n", title = "Amos (48)", alpha = 0.8, style = "cont", palette = "PuRd", n = 30, popup.vars=c("Occurences:"="n")) +
                 tm_layout(title = "Occurence for each Individual")
 All_inds
 ```
@@ -594,9 +594,9 @@ tmap_mode("view")
 MO <- tm_shape(underl_map) +
         tm_rgb() +
         tm_shape(Miriam) +
-        tm_polygons("n", title = "Miriam (22)", alpha = 0.8, style = "cont", palette = "Blues", n = 30) +
+        tm_polygons("n", title = "Miriam (22)", alpha = 0.8, style = "cont", palette = "Blues", n = 30, popup.vars=c("Recurrences:"="n")) +
         tm_shape(Olga) +
-        tm_polygons("n", title = "Olga (36)", alpha = 0.8, style = "cont", palette = "Reds", n = 30) +
+        tm_polygons("n", title = "Olga (36)", alpha = 0.8, style = "cont", palette = "Reds", n = 30, popup.vars=c("Recurrences:"="n")) +
         tm_layout(title = "Miriam (22) & Olga (36)", legend.text.size = 0.1)
 
 MO
@@ -620,9 +620,9 @@ tmap_mode("view")
 FA <- tm_shape(underl_map) +
         tm_rgb() +
         tm_shape(Franz) +
-        tm_polygons("n", title = "Franz (40)", alpha = 0.8, style = "cont", palette = "Blues", n = 30) +
+        tm_polygons("n", title = "Franz (40)", alpha = 0.8, style = "cont", palette = "Blues", n = 30, popup.vars=c("Recurrences:"="n")) +
         tm_shape(Amos) +
-        tm_polygons("n", title = "Amos (48)", alpha = 0.8, style = "cont", palette = "Reds", n = 30) +
+        tm_polygons("n", title = "Amos (48)", alpha = 0.8, style = "cont", palette = "Reds", n = 30, popup.vars=c("Recurrences:"="n")) +
         tm_layout(title = "Franz (40) & Amos (48)") 
 
 FA
@@ -688,10 +688,10 @@ tmap_mode("view")
 Olga_forest <- tm_shape(underl_map) +
                   tm_rgb() +
                   tm_shape(agg_olga_forest) +
-                  tm_polygons("n", title = "Forest", alpha = 0.8, style = "cont", n = 30, palette = "Greens", n = 100, contrast = c(0.35, 0.9)) +
+                  tm_polygons("n", title = "Forest", alpha = 0.8, style = "cont", n = 30, palette = "Greens", n = 100, contrast = c(0.35, 0.9), popup.vars=c("Recurrences:"="n")) +
                   tm_borders(col = "black", lwd = 1, lty = "solid") +
                   tm_shape(agg_olga_non_forest) +
-                  tm_polygons("n", title = "Not Forest", alpha = 0.8, style = "cont", n = 30, palette = "Reds", n = 100, contrast = c(0.35, 0.9)) +
+                  tm_polygons("n", title = "Not Forest", alpha = 0.8, style = "cont", n = 30, palette = "Reds", n = 100, contrast = c(0.35, 0.9), popup.vars=c("Recurrences:"="n")) +
                   tm_layout(legend.outside = TRUE, title = "Olga (36)")
 
 Olga_forest
