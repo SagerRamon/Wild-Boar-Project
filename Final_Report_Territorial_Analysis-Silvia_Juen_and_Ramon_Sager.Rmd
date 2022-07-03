@@ -267,6 +267,7 @@ f_mcp <- st_convex_hull(f_smry)
 ```
 
 
+#### MCP of all Males
 ```{r, warning=F, message=F}
 tmap_mode("view") # open in viewer for interactive map
 
@@ -282,13 +283,14 @@ mcp_males
 ```
 
 
+#### MCP of all Females
 ```{r, warning=F, message=F}
 #females 
 mcp_females <- tm_shape(underl_map) + 
                 tm_rgb() +
                 tm_shape(f_mcp) +
-                tm_polygons("TierID", alpha = 0.5, border.col = "red", legend.show = FALSE) +
-                tm_layout(title = "MCP of all Females")
+                tm_polygons("TierID", alpha = 0.5, border.col = "red", legend.show = FALSE) 
+                # tm_layout(title = "MCP of all Females")
 
 mcp_females
 ```
@@ -627,8 +629,8 @@ All_inds <- tm_shape(underl_map) +
               tm_shape(Franz) +
                 tm_polygons("n", title = "Franz (40)", alpha = 0.8, style = "cont", palette = "Purples", n = 30, popup.vars=c("Animal ID"="TierID", "Occurences:"="n")) +
               tm_shape(Amos) +
-                tm_polygons("n", title = "Amos (48)", alpha = 0.8, style = "cont", palette = "PuRd", n = 30, popup.vars=c("Animal ID"="TierID", "Occurences:"="n")) +
-                tm_layout(title = "Occurence for each Individual")
+                tm_polygons("n", title = "Amos (48)", alpha = 0.8, style = "cont", palette = "PuRd", n = 30, popup.vars=c("Animal ID"="TierID", "Occurences:"="n")) 
+                # tm_layout(title = "Occurence for each Individual")
 All_inds
 ```
   
@@ -684,6 +686,7 @@ ws_sf_miriam <- ws_sf %>% filter(TierID %in% c(22)) %>% select(DatetimeUTC, Tier
 Miriam <- recurr_layer_plot(ws_sf_miriam, 100)
 ```
 
+#### Caroline (10) & Miriam (22)
 ```{r, warning=F, message=F}
 
 MO <- tm_shape(underl_map) +
@@ -691,8 +694,8 @@ MO <- tm_shape(underl_map) +
         tm_shape(Miriam) +
         tm_polygons("n", title = "Miriam (22)", alpha = 0.8, style = "cont", palette = "Reds", n = 30, popup.vars=c("Animal ID"="TierID", "Recurrences:"="n")) +
         tm_shape(Caroline) +
-        tm_polygons("n", title = "Caroline (10)", alpha = 0.8, style = "cont", palette = "Blues", n = 30, popup.vars=c("Animal ID"="TierID", "Recurrences:"="n")) +
-        tm_layout(title = "Caroline (10) & Miriam (22)", legend.text.size = 0.1)
+        tm_polygons("n", title = "Caroline (10)", alpha = 0.8, style = "cont", palette = "Blues", n = 30, popup.vars=c("Animal ID"="TierID", "Recurrences:"="n")) 
+        # tm_layout(title = "Caroline (10) & Miriam (22)", legend.text.size = 0.1)
 
 MO
 ```
@@ -715,6 +718,7 @@ Amos <- recurr_layer_plot(ws_sf_amos, 100)
 ```
 
 
+#### Franz (40) & Amos (48)
 ```{r, warning=F, message=F}
 
 FA <- tm_shape(underl_map) +
@@ -722,8 +726,8 @@ FA <- tm_shape(underl_map) +
         tm_shape(Franz) +
         tm_polygons("n", title = "Franz (40)", alpha = 0.8, style = "cont", palette = "Blues", n = 30, popup.vars=c("Animal ID"="TierID", "Recurrences:"="n")) +
         tm_shape(Amos) +
-        tm_polygons("n", title = "Amos (48)", alpha = 0.8, style = "cont", palette = "Reds", n = 30, popup.vars=c("Animal ID"="TierID", "Recurrences:"="n")) +
-        tm_layout(title = "Franz (40) & Amos (48)") 
+        tm_polygons("n", title = "Amos (48)", alpha = 0.8, style = "cont", palette = "Reds", n = 30, popup.vars=c("Animal ID"="TierID", "Recurrences:"="n")) 
+        # tm_layout(title = "Franz (40) & Amos (48)") 
 
 FA
 
