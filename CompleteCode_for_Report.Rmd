@@ -73,7 +73,7 @@ metadata <- wildschwein_metadata            # Wild Boar metadata
 underl_map <- terra::rast("pk100_BE.tif")   # underlay raster map of the region
 ```
 
-```{r}
+```{r, results='hold'}
 names(ws)                                   # all column names
 
 # removing some unsused columns
@@ -115,7 +115,7 @@ sampling_intervals <- ws %>% ggplot(aes(x = DatetimeUTC, y = TierID, colour = Ti
 sampling_intervals  
 ```
 
-```{r}
+```{r, results='hold'}
 range(ws$timelag, na.rm = T)    # range of values in timelag
 nrow(ws)                        # number of observations
 
@@ -283,8 +283,6 @@ mcp_males
 
 
 ```{r, warning=F, message=F}
-tmap_mode("view") # open in viewer for interactive map
-
 #females 
 mcp_females <- tm_shape(underl_map) + 
                 tm_rgb() +
@@ -562,10 +560,6 @@ plots <- grid_join_plots(ws_sf, underl_map, 150)
 
 ### Plot all individuals with 60 second sampling interval in one plot
 ```{r, message=FALSE, warning=FALSE, fig.height=16, fig.width=14}
-# may need to adjust size of plot
-
-tmap_mode("plot")           # mode to view plot in plot instead of viewer
-
 Arranged_plots <- tmap_arrange(plots, ncol = 2)   # arranging the plots next to each other
 Arranged_plots
 ```
@@ -691,7 +685,6 @@ Miriam <- recurr_layer_plot(ws_sf_miriam, 100)
 ```
 
 ```{r, warning=F, message=F}
-tmap_mode("view")
 
 MO <- tm_shape(underl_map) +
         tm_rgb() +
@@ -705,8 +698,8 @@ MO
 ```
   
   
-very close to each other, but recurrence to different cells
-  ----------
+In this visualization we can see that the areas the two females use are very close to each other, however, the recurrence shows that they likely shelter in different spots within the forest.
+
   
   
 ### plot animals with ID's: 40 (Franz, Blue) & 36 (Amos, Red) (both males)
@@ -723,7 +716,6 @@ Amos <- recurr_layer_plot(ws_sf_amos, 100)
 
 
 ```{r, warning=F, message=F}
-tmap_mode("view")
 
 FA <- tm_shape(underl_map) +
         tm_rgb() +
@@ -738,9 +730,8 @@ FA
 ```
   
   
-here we see that the males very specfically return to cells within the forest habitat and also in the feeding grounds
-  ------------
-  
+Here, we see that the males very specifically return to cells within the forest habitat and also in the feeding grounds.
+
   
 ## Separating Forest habitat and feeding grounds
   
@@ -797,7 +788,7 @@ agg_caro_non_forest <- agg_caro %>% filter(forest.x == FALSE) %>% drop_na()
 ```
 
 ```{r, warning=F, message=F}
-tmap_mode("view")
+
 Caro_forest <- tm_shape(underl_map) +
                   tm_rgb() +
                   tm_shape(agg_caro_forest) +
@@ -816,12 +807,14 @@ Caro_forest
   
   
 ## Analysis of Meeting occasions and trajectories before and after such an event
-
+  
+  
 ### Research Question
   
   
 Can we detect territorial behaviour among Wild Boar at the edges of these territories based on trajectory data? In other words, can we detect a change in the trajectory of an "intruder" after a spatio-temporal meet up between two Individuals?
-
+  
+  
 ### Hypothesis
   
   
@@ -955,7 +948,7 @@ ggplot(data = occasion1) +
   geom_text(aes(x = E_caroline, y = N_caroline, label = rownames(occasion1)), nudge_x = -0.5, nudge_y = 4, check_overlap = TRUE, color = "darkred") +
   geom_text(aes(x = E_olga, y = N_olga, label = rownames(occasion1)), nudge_x = -0.5, nudge_y = -4, check_overlap = TRUE, color = "darkblue") +
   ggtitle("Trajectories of first meeting event - 2015-09-20 05:00:00 UTC") +
-  xlab("E") + ylab("N")
+  xlab("E") + ylab("N") + scale_fill_discrete(name = " ")
 
 ```
 
@@ -969,7 +962,7 @@ ggplot(data = occasion2) +
   geom_text(aes(x = E_caroline, y = N_caroline, label = rownames(occasion2)), nudge_x = 2, nudge_y = 2, check_overlap = TRUE, color = "darkred") +
   geom_text(aes(x = E_olga, y = N_olga, label = rownames(occasion2)), nudge_x = -5, nudge_y = 2, check_overlap = TRUE, color = "darkblue") +
   ggtitle("Trajectories of second meeting event - 2015-09-20 18:00:00 UTC") +
-  xlab("E") + ylab("N")
+  xlab("E") + ylab("N") + scale_fill_discrete(name = " ")
 
 ```
 
@@ -983,7 +976,7 @@ ggplot(data = occasion3) +
   geom_text(aes(x = E_caroline, y = N_caroline, label = rownames(occasion3)), nudge_x = 0.5, nudge_y = 3, check_overlap = TRUE, color = "darkred") +
   geom_text(aes(x = E_olga, y = N_olga, label = rownames(occasion3)), nudge_x = -2, nudge_y = 2, check_overlap = TRUE, color = "darkblue") +
   ggtitle("Trajectories of third meeting event - 2015-09-20 19:00:00 UTC") +
-  xlab("E") + ylab("N")
+  xlab("E") + ylab("N") + scale_fill_discrete(name = " ")
 
 ```
   
@@ -1004,19 +997,33 @@ To answer our first research question, whether we can identify core territories 
   
 The distinction of forest and non-forest habitat further helped to identify the core territories and feeding grounds, above shown by the example of Caroline. Additionally, it the plot shows that Carolines resting place is not only in the forest, but rather in the marshlands by the lake. Therefore, the inclusion of habitat information can add a lot of context to the territorial analysis and helps drawing conclusions about the behaviour of the animals.
   
-To answer whether we can detect territorial behaviour using trajectories we first extracted all the meeting occasions between the selected individuals. We set the threshold to 30 meters to accept two spatially close points as a meeting occasion. This was selected because we thought 30 meters may be around the maximal distance to trigger territorial behaviour on sighting. However, other distances may be more reasonable. Unfortunately, the only meet-ups we detected within a reasonable distance were between two females, Olga and Caroline. As males are usually territorial, it would have been interesting to see whether it was possible to observe the behaviour with our method. However, with the example of Olga and Caroline, we were able to demonstrate the method and we may indeed be able to detect changes in the trajectory before or after a meeting occasion. Olga and Caroline met three times, and the trajectories appear to be directed towards each other, leading to the conclusion that these two females likely tolerate each other and are familiar. Meetings two and three seem to show that they even spent some time in close proximity together. Therefore, we concluded that we did not observe any territorial behaviour between these two females. This finding is supported by the fact that these two females showed very proximate resting grounds in the recurrence analysis. 
+To answer whether we can detect territorial behaviour using trajectories we first extracted all the meeting occasions between the selected individuals. We set the threshold to 30 meters to accept two spatially close points as a meeting occasion. This was selected because we thought 30 meters may be around the maximal distance to trigger territorial behaviour on sighting. However, other distances may be more reasonable. Unfortunately, the only meet-ups we detected within a reasonable distance were between two females, Olga and Caroline. As males are usually territorial, it would have been interesting to see whether it was possible to observe the behaviour with our method. However, with the example of Olga and Caroline, we were able to demonstrate the method and we may indeed be able to detect changes in the trajectory before or after a meeting occasion. Olga and Caroline met three times, and the trajectories appear to be directed towards each other, leading to the conclusion that these two females likely tolerate each other and are familiar. Meetings two and three seem to show that they even spent some time in close proximity together. Therefore, we concluded that we did not observe any territorial behaviour between these two females. This finding is supported by the fact that these two females have resting grounds close to each other in the recurrence analysis. However, regarding the methods, there is a restriction on the data that can be used for this analysis. It is necessary to have GPS points sampled within a relatively short time. Otherwise, such behavioural expressions in territoriality might easily be overseen.
   
   
   
 ## Conclusions
   
   
-  
+We conclude that the methods we used in this analysis are suitable to analyse aspects of territoriality in animals that were tracked with GPS collars. Interactive maps also seem to be an appropriate way to visually analyse and compare territories among animals, as shown with our wild boar data. The main conclusion we draw, however, is the usefulness of the implemented grid structure, as it allowed us to use different methods to answer similar questions, using only one framework. Many other metrics can be implemented within this framework, making the analysis of such data easier and in a way exploratory to find new, interesting patterns regarding territories. In this project we demonstrated two such approaches. "Occurrences" showed the amount of GPS points sampled within a grid cell, giving an insight about which areas are visited in which frequency and also the time spent in it. As stated in literature, we too found that males have a larger territory than females, and that female territories can overlap, while males express more territoriality. The "Recurrence" analysis nicely showed the revisiting rate of each cell and gives information about where the animal roosts or feeds regularly. For example, this can be useful to locate an animals shelter or where to implement management actions to protect farmlands. In the last analysis we looked at trajectories around meeting occasions. We can observe how the behaviour of an individual changes after getting near a conspecific, giving us a method to observe behavioural patterns connected to territoriality. A requirement to do so, however, is the availability of high resolution sampling GPS data.
   
   
   
   
 ## Sources
+  
+  
+Calenge, C., Maillard, D., Fournier, P., Fouque, C., 2004. Efficiency of spreading maize in the garrigues to reduce wild boar (Sus scrofa) damage to Mediterranean vineyards. Eur. J. Wildl. Res. 50, 112–120. https://doi.org/10.1007/s10344-004-0047-y
+
+Dardaillon, M., 1986. Seasonal variations in habitat selection and spatial distribution of wild boar (Sus Scrofa) in the Camargue, Southern France. Behav. Processes 13, 251–268. https://doi.org/10.1016/0376-6357(86)90088-4
+
+Rutten, A., Casaer, J., Strubbe, D., Leirs, H., 2020. Agricultural and landscape factors related to increasing wild boar agricultural damage in a highly anthropogenic landscape. Wildlife Biol. 2020. https://doi.org/10.2981/wlb.00634
+
+Servanty S (2007) Dynamique d’une population chassèe de sangliers (Sus scrofa scrofa) en milieu forestestier. Thése de doctorat, Universitè Claude Bernard Lyon1
+
+Scillitani, L., Toso, S., 2010. Do intensive drive hunts affect wild boar ( Sus scrofa ) spatial behaviour in Italy? Some evidences and management implications 307–318. https://doi.org/10.1007/s10344-009-0314-z
+
+Spitz, F., Janeau, G., 1990. Spatial strategies: an attempt to classify daily movements of wild boar. Acta Theriol. (Warsz). 35, 129–149. https://doi.org/10.4098/at.arch.90-14
+
 
 
 
