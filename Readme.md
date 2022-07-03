@@ -1,3 +1,6 @@
+# Final report can be found in: Final_Report_Territorial_Analysis-Silvia_Juen_and_Ramon_Sager
+
+
 # Proposal for Semester Project
 
 **Patterns & Trends in Environmental Data / Computational Movement
