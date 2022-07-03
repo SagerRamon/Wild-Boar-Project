@@ -1,0 +1,1064 @@
+
+# **Territorial Analysis of Wild Boar Trajectory Data**  
+## **Project for GEO880, Patterns and Trends in Environmental Data - Computational Movement Analysis**  
+### Silvia Juen & Ramon Sager, 03.07.2022  
+  
+  
+  
+## Introduction  
+  
+Wildlife habitat in Switzerland is becoming increasingly restricted. Due to urban fragmentation and expansion of agricultural areas, the habitat of wild animals is no longer as connected and diverse as it was (Rutten et al., 2020). However, in Switzerland, there is currently a spread of wild boar, and as food supply in forest areas and forests themselves are getting scarce, they are roaming into agricultural areas to feed on easily accessible crops (Calenge et al., 2004). This spreading of wild boars into human modified areas is also constantly increasing (Scillitani and Toso, 2010). 
+  
+Wild boar are predominantly nocturnal and rest during the day in forested habitats or in marshy areas. This has been shown in studies such as in Servanty et al. (2007), where feral swine movement data were measured and analysed for their zonal behaviour. Moreover, wild boar live mainly in socially organized family groups that can contain up to 30 animals, lead by dominant females (Scillitani and Toso, 2010). These groups usually show high site fidelity (Dardaillon, 1986). Males separate themselves from the family they grew up in even before they reach one year of age. After that, they continue to live solitary, except during the mating season, where fights between males determine who is having the opportunity to mate with a female. Due to these characteristics, it comes unsurprising that in wild boar, that females usually tolerate each others and their territories overlap. Males, however, are usually more territorial (Servanty et al 2007). 
+  
+As wild boar appear to show interesting territorial behaviour, we here want to explore ways to analyse GPS data of these animals on territories and to detect territorial behaviours computationally. In the Bern area around Lac de Neuchatel, GPS data has been collected over the last years and it provides information on movements in their habitat and may help understand behavioural patterns, such as the feeding of wild boars in fragmented areas or the efficiency of scaring devices to protect farmlands. In this project we will have a closer look at the territoriality among different wild boars and how they use their habitat. Therefore, we asked the following questions:
+  
+* Can we identify (core) territories of individual Wild Boar in their resting/sleeping sites and feeding grounds?
+* Can we detect territorial behaviour among Wild Boar at the edges of these territories based on trajectory data?
+    + i.e. can we detect a change in the trajectory of an "intruder" after a spatio-temporal meet up between two Individuals?
+  
+  
+  
+  
+## Data
+  
+Wild boars in the region above Lake Neuchâtel were tracked using GPS trackers. The GPS data were collected by Dr. Stefan Suter and Team (ZHAW) during a study on the efficiency of scaring devices in agricultural areas. The data set used in this project contains 19 different wild boar. These individuals were tracked over differing periods of time between 28.05.2014 and 18.10.2016, and were also monitored using different sampling intervals between each GPS point, with a minimal sampling interval of one minute. Since were interested is territorial behaviours, which are best detected using small sampling intervals, we focused on those five individuals that were tracked simultaneously with a sampling interval of 1 minute. For each of those individuals, the following attributes were selected:  
+
+* AnimalID: Identification number of a particular individual
+* TierName: Name of a specific individual
+* DatetimeUTC: Date and Time stamp of the GPS point
+* E: Eastern Coordinates
+* N: Western Coordinates
+  
+Additionally, at the beginning we created the variable "timelag", which represents the time between each sampling occasion. Furthermore, we used data from the Geopackage "Feldaufnahmen_Fanel.gpkg", where spatial properties were mapped. We extracted forest polygons to distinct between forest habitats (retreat habitat) and non-forest habitats, where wild boar usually feed. 
+  
+  
+  
+  
+## Methods and Results
+  
+We here present our methods by following our workflow through the data processing and the exploratory data analysis (EDA). Later in this section, we will also present our results together with the methods used to produce them. To answer our research questions, we tried different approaches delivering interesting insights into the territorial behaviour of these wild boar. All the code and plots produced are reproducible and generalized. It can be used on any animal data that is available or converted into the same structure. Otherwise, the code can be adapted by changing the used column names inside the functions and similar data processing. Therefore, one could use this code to easily analyze all the animals in the data set with any sampling rate. But due to lack of time, we decided to restrict our analysis on these five individuals with a one minute sampling interval.  
+  
+  
+```{r, warning=F, message=F, echo=FALSE}
+rm(list=ls())
+```
+
+### Libraries
+  
+The following libraries were used in the course of this analysis:
+```{r, warning=F, message=F}
+library(ComputationalMovementAnalysisData)  # Wild Boar Data 
+library(tidyverse)                          # dplyr, ggplot, etc.
+library(sf)                                 # spatial data operations
+library(tmap)                               # thematic maps for spatial vector data 
+library(terra)                              # spatial raster and vector data operations
+library(gridExtra)                          # functions to work with grids and their visualizations
+library(data.table)                         # functions for easy handling of data frames
+library(lubridate)                          # for easy handling of Datetimes
+library(ggpubr)                             # for ggplot customizations
+
+```
+  
+  
+### Preparation of the data  
+  
+In a first step, all the data was loaded, included columns inspected and unused columns were removed. 
+
+  
+```{r, warning=F, message=F}
+ws <- wildschwein_BE                        # complete Dataset of Wild Boar
+metadata <- wildschwein_metadata            # Wild Boar metadata
+
+underl_map <- terra::rast("pk100_BE.tif")   # underlay raster map of the region
+```
+
+```{r, results='hold'}
+names(ws)                                   # all column names
+
+# removing some unsused columns
+ws <- ws %>% subset(select = - c(day, CollarID, moonilumination))
+
+n_distinct(ws$TierID)                       # 19 Wild Boar
+```
+
+  
+Then, the variable "timelag" was created and inspected to recieve information about the time between each sampling point.
+  
+
+```{r}
+# Adding "timelag" column - time between each sampling occasion
+ws <- ws %>% 
+  group_by(TierID) %>% 
+  mutate(timelag = as.integer(difftime(lead(DatetimeUTC), DatetimeUTC, units = "secs"))) %>% 
+  ungroup()
+
+summary(ws$timelag)                         # 19 NA's because of 19 distinct ID's
+```  
+```{r}
+head(ws)
+```
+
+  
+### EDA (Exploratory Data Analysis)
+
+#### Exploring Sampling Intervals and timing of samplings for each Wild Boar
+
+
+```{r}
+ws$TierID <- as.factor(ws$TierID)
+
+sampling_intervals <- ws %>% ggplot(aes(x = DatetimeUTC, y = TierID, colour = TierID)) +
+  geom_point(show.legend = F) +
+  ggtitle("Sampling time of all Individuals")
+
+sampling_intervals  
+```
+
+```{r, results='hold'}
+range(ws$timelag, na.rm = T)    # range of values in timelag
+nrow(ws)                        # number of observations
+
+# Filtering Rows with unreasonable values
+ws_range <- ws %>% 
+  filter(timelag >= 0 & timelag < 30000)
+  
+
+range(ws_range$timelag, na.rm = T)
+nrow(ws_range)
+
+nrow(ws) - nrow(ws_range)       # 47 values removed
+```
+
+  
+#### Histograms of sampling interval distribution
+
+Here, we created multiple histograms to observe the distributions of sampling intervals, narrowing down the sampling intervals each step. Thereby, we explored the distribution of sampling intervals and whether we find enough data sampled within one minute.
+
+
+```{r, warning=FALSE}
+ws_range %>% 
+  ggplot(aes(x = timelag)) +
+  geom_histogram(binwidth = 60) +
+  scale_y_log10() +
+  ggtitle("Logarithmic histogram of sampling intervals") +
+  ylab("log(count)")
+```
+
+
+```{r, warning=FALSE}
+# filtered for intervals between 0  and 2000 seconds 
+ws_range2 <- ws_range %>% filter(timelag >= 0 & timelag < 2000)
+
+ws_range2 %>% 
+  ggplot(aes(x = timelag)) +
+  geom_histogram(binwidth = 1) +
+  scale_y_log10() +    # logarithmic for better visualization of sampling intervals counts
+  ggtitle("Logarithmic histogram of sampling intervals < 2000s") +
+  ylab("log(count)")
+```
+
+
+Most sampling intervals were found to be around 10 and 20 minutes.
+
+
+```{r, warning=F, message=F}
+# Count of 60 second sampling intervals
+ws_60s <- ws_range %>% filter(timelag >= 40 & timelag < 70)
+
+ws_60s %>% 
+  ggplot(aes(x = timelag)) +
+  geom_histogram(binwidth = 1) +
+  scale_y_log10() +
+  ggtitle("Logarithmic histogram of sampling intervals < 70s") +
+  ylab("log(count)")
+
+```
+
+
+Around 30000 sampling intervals are within 1 minute.
+  
+  
+After finding out that enough data is available, we searched for the individuals with temporal overlapping sampling times, while having a sampling time of about one minute.
+  
+  
+
+```{r}
+ws_60s <- ws_60s %>% filter(DatetimeUTC > "2015-01-01" & DatetimeUTC < "2016-01-01")
+
+sampling_intervals_1m <- ws_60s %>% ggplot(aes(x = DatetimeUTC, y = TierID, colour = TierID)) +
+  geom_point(show.legend = F) +
+  ggtitle("Sampling overlaps among the 5 Individuals of interest")
+
+sampling_intervals_1m
+
+```
+
+
+We found that the animals with the ID's 10, 22, 36, 40 and 48 have sampling intervals of one minute in overlapping times in the year 2015
+
+
+```{r}
+# Names of the animals we are interested in, based on their 60 seconds intervals in sampling
+ws_names <- unique(ws_60s$TierName)
+```
+
+
+  
+#### Pre-Analysis of Location
+  
+In order to make sure that these five individuals indeed share the same habitat spatially, we produced the following plots, where we used the interactive map to finally identify the individuals and their sex with the corresponding convex hull. For that purpose, we first transformed the data into a spatial object by using the function "st_as_sf". A Convex Hull was used as a rough circumscription of the activity areas, using the minimum convex polygon method. 
+  
+
+```{r}
+sf_60s <- st_as_sf(ws_60s, coords = c("E","N"), crs = 2056)
+
+sf_60s_grouped <- group_by(sf_60s, TierID)            # grouping by individual
+
+sf_60s_smry <- summarise(sf_60s_grouped)
+mcp <- st_convex_hull(sf_60s_smry)                    # Creating the convex hull based on each data point by individual
+```
+
+```{r}
+ggplot(mcp, ) + 
+    aes(fill = TierID, alpha = 0.5) +
+    geom_sf() +
+    coord_sf(datum = sf::st_crs(2056)) +
+    ggtitle("MCP of all 5 Individuals of interest") +
+    xlab("E") + ylab("N")
+```
+  
+  
+Overlapping convex-hulls among wild boar in question, except for individual with ID 48. Also, the sizes of the convex hulls apparently differ among sexes (40 & 48 are males). As expected, females seem to overlap, while the males are rather territorial.  
+  
+  
+#### Transforming to SF object and adding Sex to data set from metadata
+
+
+```{r}
+ws <- merge(ws, metadata[, c("TierID","Sex")], by = "TierID")
+
+ws_sf <- st_as_sf(ws,
+                coords = c("E", "N"), 
+                crs = 2056)
+
+ws_sf$TierID <- as.factor(ws_sf$TierID)
+ws_grp <- ws_sf %>% group_by(TierID)
+```
+
+
+
+#### Plotting Convex Hull's of Males and females separately and interactively
+
+
+```{r}
+# ws_grp -> is a grouped sf object containing all individuals
+# m_grp -> just males
+# f_grp -> just females
+
+m_grp <- ws_grp %>% filter(Sex == "m")
+f_grp <- ws_grp %>% filter(Sex == "f")
+
+m_smry <- summarise(m_grp)
+f_smry <- summarise(f_grp)
+
+m_mcp <- st_convex_hull(m_smry)
+f_mcp <- st_convex_hull(f_smry)
+```
+
+
+```{r, warning=F, message=F}
+tmap_mode("view") # open in viewer for interactive map
+
+#males
+mcp_males <- tm_shape(underl_map) + 
+              tm_rgb() +
+              tm_shape(m_mcp) +
+              tm_polygons("TierID", alpha = 0.5, border.col = "red", legend.show = FALSE) +
+              tm_layout(title = "MCP of all Males")
+              
+
+mcp_males
+```
+
+
+```{r, warning=F, message=F}
+#females 
+mcp_females <- tm_shape(underl_map) + 
+                tm_rgb() +
+                tm_shape(f_mcp) +
+                tm_polygons("TierID", alpha = 0.5, border.col = "red", legend.show = FALSE) +
+                tm_layout(title = "MCP of all Females")
+
+mcp_females
+```
+
+
+Females are apparently very overlapping spatially, however, time of sampling do not always overlap. Also, males seem to have larger MCP's and all MCP's are covering the main forest patch near the lake.
+  
+Now we have finally detected and selected our five animals with which we will perform our territorial analysis. They overlap in space and time, and were sampled with a sampling interval of one minute.
+
+
+
+
+
+## Territorial Analysis
+  
+  
+### Research Question:
+Can we identify (core) territories of individual Wild Boar in their resting/sleeping sites and feeding grounds?
+  
+### Hypothesis
+We expect that we can at least to some extent identify core territories. Given that, we further expect that these territories differ in size between the resting sites (the forest patch) and the feeding grounds (agricultural sites), and among sexes.
+  
+  
+To answer this research question, we used a grid structure framework that was created based on the outermost points of an individuals GPS data. Using this grid structure, we wanted to see if we can implement different metrics for territoriality, using the same framework. This would allow for better comparison among the methods, which in the end may have a different meaning in the biological context. 
+  
+At the beginning of the analysis of territoriality, we remove all the data processed in the EDA. Then, the data was reloaded, processed again and selected only the five individuals of interest. Thereby we made sure that we have the complete data set we need and to improve reproducibility of the workflow. 
+  
+  
+```{r}
+# removing all the data form memory
+rm(list=ls())
+```
+
+```{r}
+# reloading the Wild Boar data
+ws <- wildschwein_BE                        # complete Dataset of Wild Boar
+metadata <- wildschwein_metadata            # Wild Boar metadata
+
+underl_map <- terra::rast("pk100_BE.tif")   # underlay raster map of the region
+
+# Loading and preparing Forest Polygon
+st_layers("Feldaufnahmen_Fanel.gpkg")
+forest <- read_sf("Feldaufnahmen_Fanel.gpkg")
+forest <- forest %>% filter(Frucht == "Wald")
+```
+  
+  
+### Data Preparation
+  
+  
+  
+```{r}
+# adding Sex and Study_area from metadata to the data set, removing unused columns
+ws <- merge(ws, metadata[, c("TierID","Sex")], by = "TierID")
+ws <- merge(ws, metadata[, c("TierID","Study_area")], by = "TierID")
+ws <- ws %>% subset(select = - c(CollarID, day, moonilumination))
+
+ws_fin <- ws %>% 
+  filter(Study_area == "Bern")
+# apparently, complete data set already only containing animals from the Bernese study area
+
+# removing this variable and column "study_area" again
+rm(ws_fin)
+ws <- ws %>%  subset(select = - c(Study_area))
+```
+
+```{r}
+# Focusing only on these 5 individuals having a sampling interval of 60 seconds
+ws <- ws %>% filter(TierID %in% c(10, 22, 36, 40, 48)) 
+
+```
+
+```{r}
+ws_sf <- st_as_sf(ws,
+                coords = c("E", "N"), 
+                crs = 2056)
+
+# ws_sf_nonfactor <- ws_sf
+ws_sf$TierID <- as.factor(ws_sf$TierID)
+
+head(ws_sf)
+```
+  
+  
+  
+  
+  
+## Territorial Analysis using the "aggregate" function 
+  
+### Function to produce an occurence plot using a grid structure with aggregate. 
+  
+In the first analysis, we created a function to produce a frequency plot that shows how many GPS points were sampled within each grid cell per individual. Within the function, we used the *aggregate* function from the "stats" package, to merge all data points to their respective grid cell. The size of the grid cells must be defined when the function is called.
+  
+The function is applicable to any Wild Boar in the Data set and can also handle multiple (or all) animals as inputs, producing a list of plots. For that we extracted first all the animals' ID's within the input data set into a list and group the data by each animals ID. Then, we loop through the ID list to extract the corresponding data into a temporary data set, used to produce the grid and to aggregate the data. We finally produce a plot for each animal passed to the function and store that within the list produced in the beginning. After applying the function, these plots can either be arranged to be viewed and compared together, or each plot can separately be extracted from the plot list, as shown in the following lines of code. All major steps are explained within a comment.
+  
+  
+```{r}
+grid_agg_plots <- function(data, underl_map, Cellsize){
+  
+  
+  # underl_map -> raster map of the region, used as background map
+  
+  
+  # get ID's in input data and produce an empty list
+  id_list <- unique(data$TierID)
+  plot_list <- vector("list", length(id_list))
+  
+  data <- group_by(data, TierID)
+  
+  for (i in seq(1,length(id_list))){
+    # extracting data of the animal with certain animal ID:
+    ws_temp <- filter(data, TierID == id_list[i])
+    
+    # constructing the Grid by the outermost points of the animal in question
+    grid_area <- st_make_grid(ws_temp, square = FALSE, cellsize = Cellsize, crs = 2056) %>% st_as_sf()
+    
+    # aggregating the gps points to each grid cell
+    grid_agg <- aggregate(x = ws_temp, by = grid_area, FUN = length) %>% select(TierID)
+    
+    # Name for title
+    plot_title <- paste("TierID = ", ws_temp$TierID, sep = "")
+    
+    # producing the plot
+    p <-  tm_shape(underl_map) +
+                      tm_rgb() +
+                      tm_shape(grid_agg) +
+                      tm_polygons("TierID", title = "Frequency", alpha = 0.7, style="cont", legend.show = TRUE) +
+                      tm_layout(legend.outside = TRUE, title = plot_title)
+      
+    # creating variable & append to plot list
+    var_name <- paste("P", id_list[i], sep = "")
+    
+    # appending to plot list
+    plot_list[[i]] <- assign(var_name, p)
+    
+  }
+  return(plot_list)
+}
+```
+
+  
+### Running the function on all five individuals with 60 second sampling interval in one plot, using a cellsize of 150.
+  
+  
+```{r}
+plots <- grid_agg_plots(ws_sf, underl_map, 150)
+```
+
+  
+### Plotting all individuals with 60 second sampling interval in one plot  
+  
+  
+```{r, message=FALSE, warning=FALSE, fig.height=16, fig.width=14}
+# may need to adjust size of plot
+
+tmap_mode("plot")           # mode to view plot in plot instead of viewer
+
+Arranged_plots <- tmap_arrange(plots, ncol = 2)   # arranging the plots next to each other
+Arranged_plots
+```
+
+  
+This plot represents the absolute number of GPS points in each grid cell for each animal of interest. Each cell is coloured continuously according to the amount of points in it, as shown in each legend.
+  
+  
+### Plotting animals with ID's: 10 (Caroline) & 22 (Miriam) (both females)
+
+
+```{r, message=FALSE, warning=FALSE, fig.height=10, fig.width=8}
+ws_females    <- ws_sf %>% filter(TierID %in% c(10,22))
+plots_females <- grid_agg_plots(ws_females, underl_map, 150)
+arr_females   <- tmap_arrange(plots_females, ncol = 1)
+arr_females
+```
+  
+  
+In this plot we compare the females Caroline (10) & Miriam (22). We can see that the cells in which they were sampled most frequently overlap to some extent. This hints, as expected, on relaxed territoriality among these two females. Note that the area used by Caroline is much larger, which is most likely due to the prolonged time during which this female was sampled.
+  
+  
+### plot animals with ID's: 40 (Franz) & 36 (Amos) (both males)
+  
+  
+```{r, message=FALSE, warning=FALSE, fig.height=10, fig.width=8}
+ws_males      <- ws_sf %>% filter(TierID %in% c(40,48))
+plots_males   <- grid_agg_plots(ws_males  , underl_map, 150)
+arr_males     <- tmap_arrange(plots_males  , ncol = 1)
+arr_males
+```
+  
+  
+Here we can see that these two males both cover a large area, larger than the females (except for Miriam, that was sampled over a longer time period, which is probably the reason for the increased size of the area used). Moreover, it appears that the mainly used cells do not overlap and also the large picture hints on territorial behaviour among these individuals.
+
+Using this function, we conclude, works well to depict the habitat used by the individuals. However, using the aggregate function leads to a loss of most information linked to the data points, such as sampling time and the individual it belongs to. Therefore, we decided to explore another method, where we can keep all the information we want, resulting in higher flexibility regarding the analysis performed.
+  
+  
+  
+
+  
+## Territorial Analysis using the "st_join" function 
+  
+  
+From here on, we used the *st_join* function from the "sf" package to replace the aggregate function used previously. In a first step, we assured to keep information about Animal ID. Later, in the section about "Recurrence", we are able to keep information about datetime and additional logical information to construct recurrences to a specific cell in the grid using the st_join method.
+  
+  
+### Function to produce an occurence plot using a grid structure with st_join. 
+  
+  
+This function, as before, is applicable to any Wild Boar in the Data set and can also handle multiple (or all) animals as inputs, producing a list of plots. The function is built in a similar way as the aggregate function, only adapting the sections to merge data to each grid cell. For that purpose, we constructed a variable calles *by_cell*, in which all data was allocated, to later join it to the grid by spatial information. After applying the function, these can either be arranged to be viewed and compared together, or each plot can separately be extracted from the plot list.
+  
+  
+```{r}
+
+grid_join_plots <- function(data, underl_map, Cellsize){
+
+  # get ID's in input data and produce an empty list
+  id_list <- unique(data$TierID)
+  plot_list <- vector("list", length(id_list))
+  
+  data <- group_by(data, TierID)
+  
+  for (i in seq(1,length(id_list))){
+    
+    # extracting data of the animal with certain animal ID:
+    ws_temp <- filter(data, TierID == id_list[i]) %>% select(DatetimeUTC, TierID)
+    
+    # constructing the Grid by the outermost points of the animal in question
+    grid_area <- st_make_grid(ws_temp, square = FALSE, cellsize = Cellsize, crs = 2056) %>% st_as_sf()
+    
+    # Adding unique ID to each cell in the grid
+    grid_area <- grid_area %>% mutate(ID = row_number())
+    
+    # join all data points to each grid cell
+    grid_agg <- st_join(ws_temp, grid_area, left = FALSE)
+    
+    # get number of occurrences in each grid cell
+    by_cell <- grid_agg %>% group_by(ID,TierID) %>% summarise(n = n())
+    
+    # join information in each grid cell to the grid by joining the cell ID's
+    new_agg <- st_join(grid_area, by_cell)
+    
+    # Name for title
+    plot_title <- paste("TierID = ", ws_temp$TierID, sep = "")
+    
+    # produce individual plot 
+    p <-  tm_shape(underl_map) +
+                      tm_rgb() +
+                      tm_shape(new_agg) +
+                      tm_polygons("n", title = "Frequency", alpha = 0.8, style = "cont", legend.show = TRUE) +
+                      tm_layout(legend.outside = TRUE, title = plot_title)
+
+    # creating variable & append to plot list
+    var_name <- paste("P", id_list[i], sep = "")
+
+    # appending to plot list
+    plot_list[[i]] <- assign(var_name, p)
+
+  }
+  return(plot_list)
+  # return(grid_agg)
+}
+```
+
+
+### running the function on all individuals with 60 second sampling interval in one plot
+```{r}
+plots <- grid_join_plots(ws_sf, underl_map, 150)
+```
+
+
+### Plot all individuals with 60 second sampling interval in one plot
+```{r, message=FALSE, warning=FALSE, fig.height=16, fig.width=14}
+Arranged_plots <- tmap_arrange(plots, ncol = 2)   # arranging the plots next to each other
+Arranged_plots
+```
+  
+  
+In this plot we can see, that this function produces the same results as with the methods used before. However, we are now able to keep imprtant information. This enables us to use the same framework for the later analysis on recurrences to a grid cell. Furthermore, it allowed us to produce an interactive plot containing multiple layers, each representing the occurrence of an individual.
+  
+  
+### Function to produce an occurence plot containing multiple layers using a grid structure with st_join. 
+  
+  
+The following function processes the data set that will be used to produce the interactive plot containing multiple layers. The function must be applied on each individual separately by filtering them first by an animals ID or name. 
+
+```{r}
+occur_layer_plot <- function(data, Cellsize){
+  
+  # constructing the Grid by the outermost points of the animal in question
+  grid_area <- st_make_grid(data, square = FALSE, cellsize = Cellsize) %>%  st_as_sf()
+  
+  # Adding unique ID to each cell in the grid
+  grid_area <- grid_area %>% mutate(ID = row_number())
+
+  # join all data points to each grid cell
+  grid_agg <- st_join(data, grid_area, left = FALSE)
+
+  # get number of occurrences in each grid cell
+  by_cell <- grid_agg %>% group_by(ID,TierID) %>% summarise(n = n())
+  
+  # join information in each grid cell to the grid by joining the cell ID's and drop NA, which deletes the rest of the grid
+  new_agg <- st_join(grid_area, by_cell, by = ID) %>% drop_na()
+  
+  # return cell-wise information to be plotted afterwards
+  return(new_agg)
+}
+```
+
+```{r, message=FALSE, warning=FALSE}
+# Filtering each individual
+ws_Caroline <- ws_sf %>% filter(TierID == 10)
+ws_Miriam   <- ws_sf %>% filter(TierID == 22)
+ws_Olga     <- ws_sf %>% filter(TierID == 36)
+ws_Franz    <- ws_sf %>% filter(TierID == 40)
+ws_Amos     <- ws_sf %>% filter(TierID == 48)
+
+# Applying function
+Caroline  <- occur_layer_plot(ws_Caroline, 150)
+Miriam    <- occur_layer_plot(ws_Miriam, 150)
+Olga      <- occur_layer_plot(ws_Olga, 150)
+Franz     <- occur_layer_plot(ws_Franz, 150)
+Amos      <- occur_layer_plot(ws_Amos, 150)
+```
+
+#### Occurence plot containing layers for all 5 individuals
+```{r, warning=F, message=F}
+tmap_mode("view")
+
+All_inds <- tm_shape(underl_map) +
+                tm_rgb() +
+              tm_shape(Caroline) +
+                tm_polygons("n", title = "Caroline (10)", alpha = 0.8, style = "cont", palette = "Blues", n = 30, popup.vars=c("Animal ID"="TierID", "Occurences:"="n")) +
+              tm_shape(Miriam) +
+                tm_polygons("n", title = "Miriam (22)", alpha = 0.8, style = "cont", palette = "Reds", n = 30, popup.vars=c("Animal ID"="TierID", "Occurences:"="n")) +
+              tm_shape(Olga) +
+                tm_polygons("n", title = "Olga (36)", alpha = 0.8, style = "cont", palette = "Greens", n = 30, popup.vars=c("Animal ID"="TierID", "Occurences:"="n")) +
+              tm_shape(Franz) +
+                tm_polygons("n", title = "Franz (40)", alpha = 0.8, style = "cont", palette = "Purples", n = 30, popup.vars=c("Animal ID"="TierID", "Occurences:"="n")) +
+              tm_shape(Amos) +
+                tm_polygons("n", title = "Amos (48)", alpha = 0.8, style = "cont", palette = "PuRd", n = 30, popup.vars=c("Animal ID"="TierID", "Occurences:"="n")) +
+                tm_layout(title = "Occurence for each Individual")
+All_inds
+```
+  
+  
+This interactive plot is very handy to compare the animals directly with each other. On the upper left panel, the different layers can be selected or de-selected, depending on which animals we want to compare. Unfortunately, it is not possible to adjust the size of the legends within these interactive plots, making most of them un observable. However, for a qualitative analysis of the frequencies of GPS points sampled per grid cell based on the corresponding colouration, already this plot can be useful.  
+
+
+
+
+## Analysis of recurrences to each grid cell by an individual wild boar.
+
+The analysis on recurrences is providing us another information about the territory of an individual, as we can see which cells were repeatedly visited and seem to represent the main sleeping (in resting territories) and feeding (in the feeding grounds) cells and territories of a wild boar. In contrast to occurrence, the recurrences are ignoring the time spent in a given grid cell. We modeled the recurrences so that each time the cell was entered from another cell (not necessarily the neighboring cell), a logical variable was converted into "True". The count of True values per cell then represents the number of times each cell was visited.
+  
+  
+### Function to produce recurrence plots containing a layer for each individual 
+
+
+As previously, this function is applicable to any Wild Boar in the Data set, but needs to be done for every individual separately. After applying the function, the output will be a data frame containing information about the amount of time a cell was revisited with its corresponding animal ID, so that it can afterwards be plotted with a layer for each animal of interest.
+  
+  
+```{r}
+recurr_layer_plot <- function(data, Cellsize){
+  
+  # constructing the Grid by the outermost points of the animal in question
+  grid_area <- st_make_grid(data, square = FALSE, cellsize = Cellsize) %>%  st_as_sf()
+  
+  # Adding unique ID to each cell in the grid
+  grid_area <- grid_area %>% mutate(ID = row_number())
+
+  # join all data points to each grid cell
+  grid_agg <- st_join(data, grid_area, left = FALSE)
+
+  # get number of reccurrences to each grid cell
+  by_cell <- grid_agg %>% mutate(logic = ifelse(ID == lag(ID), TRUE, FALSE)) %>% group_by(ID, TierID) %>% count(logic) %>% filter(logic == FALSE)
+
+  # join information in each grid cell to the grid by joining the cell ID's and drop NA, which deletes the rest of the grid
+  new_agg <- st_join(grid_area, by_cell, by = ID) %>% drop_na()
+  
+  # return cell-wise information to be plotted afterwards
+  return(new_agg)
+}
+```
+  
+  
+### Plot animals with ID's: 10 (Caroline, BLue) & 22 (Miriam, Red) (both females)
+  
+  
+```{r}
+ws_sf_caro <- ws_sf %>% filter(TierID %in% c(10)) %>% select(DatetimeUTC, TierID)
+Caroline <- recurr_layer_plot(ws_sf_caro, 100)
+
+ws_sf_miriam <- ws_sf %>% filter(TierID %in% c(22)) %>% select(DatetimeUTC, TierID)
+Miriam <- recurr_layer_plot(ws_sf_miriam, 100)
+```
+
+```{r, warning=F, message=F}
+
+MO <- tm_shape(underl_map) +
+        tm_rgb() +
+        tm_shape(Miriam) +
+        tm_polygons("n", title = "Miriam (22)", alpha = 0.8, style = "cont", palette = "Reds", n = 30, popup.vars=c("Animal ID"="TierID", "Recurrences:"="n")) +
+        tm_shape(Caroline) +
+        tm_polygons("n", title = "Caroline (10)", alpha = 0.8, style = "cont", palette = "Blues", n = 30, popup.vars=c("Animal ID"="TierID", "Recurrences:"="n")) +
+        tm_layout(title = "Caroline (10) & Miriam (22)", legend.text.size = 0.1)
+
+MO
+```
+  
+  
+In this visualization we can see that the areas the two females use are very close to each other, however, the recurrence shows that they likely shelter in different spots within the forest.
+
+  
+  
+### plot animals with ID's: 40 (Franz, Blue) & 36 (Amos, Red) (both males)
+  
+  
+```{r}
+ws_sf_franz <- ws_sf %>% filter(TierID %in% c(40)) %>% select(DatetimeUTC, TierID)
+Franz <- recurr_layer_plot(ws_sf_franz, 100)
+
+ws_sf_amos <- ws_sf %>% filter(TierID %in% c(48)) %>% select(DatetimeUTC, TierID)
+Amos <- recurr_layer_plot(ws_sf_amos, 100)
+
+```
+
+
+```{r, warning=F, message=F}
+
+FA <- tm_shape(underl_map) +
+        tm_rgb() +
+        tm_shape(Franz) +
+        tm_polygons("n", title = "Franz (40)", alpha = 0.8, style = "cont", palette = "Blues", n = 30, popup.vars=c("Animal ID"="TierID", "Recurrences:"="n")) +
+        tm_shape(Amos) +
+        tm_polygons("n", title = "Amos (48)", alpha = 0.8, style = "cont", palette = "Reds", n = 30, popup.vars=c("Animal ID"="TierID", "Recurrences:"="n")) +
+        tm_layout(title = "Franz (40) & Amos (48)") 
+
+FA
+
+```
+  
+  
+Here, we see that the males very specifically return to cells within the forest habitat and also in the feeding grounds.
+
+  
+## Separating Forest habitat and feeding grounds
+  
+  
+Here, we wanted to provide an example on how to separate the analysis between different parts of the habitat. With the help of the function *st_intersects* from the "sf" package and additional spatial information for the forest polygons from the provided geopackage "Feldaufnahmen_Fanel.gpkg", we assigned all the grid cells to either forest or non-forest habitat. Having these separated, we can produce a plot where we can visually analyze occurrence or recurrence per cell in different habitats separately. The split could be done with more detailed habitat information, however, we decided to focus to differentiate between forest and non-forest, to have a look on how the main territories differ between the main resting sites in forests and outside, where wild boar usually go to forage. Also, we restricted this analysis on occurrences, however, the same framework is also applicable on recurrences.  
+  
+  
+```{r}
+forest_separation_fun <- function(data, Cellsize, forest_polygon){
+  
+  # constructing the Grid by the outermost points of the animal in question
+  grid_area <- st_make_grid(data, square = FALSE, cellsize = Cellsize) %>%  st_as_sf()
+  
+  # returns True/False for points in forest
+  intersects <- st_intersects(grid_area,  forest)
+  
+  # Additional column in grid_area with T/F for Forest
+  grid_area$forest <- sapply(intersects, FUN = length) > 0
+  
+  # Adding unique ID to each cell in the grid
+  grid_area <- grid_area %>% mutate(ID = row_number())
+  
+  # join all data points to each grid cell
+  grid_agg <- st_join(data, grid_area, left = FALSE)
+
+  # get number of occurrences in each grid cell and group by forest
+  by_cell <- grid_agg %>% group_by(ID, forest) %>% summarise(n = n())
+
+  # join information in each grid cell to the grid by joining the cell ID's and drop NA, which deletes the rest of the grid
+  new_agg <- st_join(grid_area, by_cell) %>% drop_na()
+  
+  # return cell-wise information to be plotted afterwards
+  return(new_agg)
+  
+}
+
+
+```
+
+
+### Example plot for wild boar Caroline
+  
+  
+```{r, warning=F, message=F}
+# selecting Caroline (10)
+ws_sf_caro <- ws_sf %>% filter(TierID %in% c(10)) %>% select(DatetimeUTC, TierID)
+
+# applying function
+agg_caro <- forest_separation_fun(ws_sf_caro, 150, forest)
+
+# splitting forsest and non_forest
+agg_caro_forest     <- agg_caro %>% filter(forest.x == TRUE) %>% drop_na()
+agg_caro_non_forest <- agg_caro %>% filter(forest.x == FALSE) %>% drop_na()
+```
+
+```{r, warning=F, message=F}
+
+Caro_forest <- tm_shape(underl_map) +
+                  tm_rgb() +
+                  tm_shape(agg_caro_forest) +
+                  tm_polygons("n", title = "Forest", alpha = 0.8, style = "cont", n = 30, palette = "Greens", n = 100, contrast = c(0.35, 0.9), popup.vars=c("Number of points:"="n")) +
+                  tm_borders(col = "black", lwd = 1, lty = "solid") +
+                  tm_shape(agg_caro_non_forest) +
+                  tm_polygons("n", title = "Not Forest", alpha = 0.8, style = "cont", n = 30, palette = "Reds", n = 100, contrast = c(0.35, 0.9), popup.vars=c("Number of points:"="n"))
+
+Caro_forest
+```
+  
+  
+  
+  
+  
+  
+  
+## Analysis of Meeting occasions and trajectories before and after such an event
+  
+  
+### Research Question
+  
+  
+Can we detect territorial behaviour among Wild Boar at the edges of these territories based on trajectory data? In other words, can we detect a change in the trajectory of an "intruder" after a spatio-temporal meet up between two Individuals?
+  
+  
+### Hypothesis
+  
+  
+We expect to observe changes in the trajectory of an individual that intrudes the territory of another wild boar, after they have met in close proximity.
+  
+  
+In this analysis we wanted to demonstrate how territorial behaviour among wild boar could be analyzed visually. For that purpose, we made a preliminary analysis to detect which of the five individuals with a sampling rate of one point per minute meet (not included in this code, see the files on "trajectories"). A meet-up was defined to be when animals were within 30 meters of each other. We matched the data of each individual by time, calculated the distance from each other, and highlighted all the points within the threshold we set. Based on this analysis, we found that the only animals that met while being monitored were Miriam and Olga. Unfortunately, the two males did not meet in this data set. This would have been important in order to answer our research question, as we expected to observe territorial behaviour especially among males. However, the meetings of Olga and Caroline have also shown interesting results.
+  
+  
+Again, we first clean all the data, reload and process it.
+  
+  
+```{r}
+# removing all the data form memory
+rm(list=ls())
+```
+
+```{r}
+# reloading the Wild Boar data
+ws <- wildschwein_BE                        # complete Dataset of Wild Boar
+metadata <- wildschwein_metadata            # Wild Boar metadata
+```
+
+```{r}
+# adding Sex and Study_area from metadata to the data set, removing unused columns
+ws <- merge(ws, metadata[, c("TierID","Sex")], by = "TierID")
+ws <- merge(ws, metadata[, c("TierID","Study_area")], by = "TierID")
+ws <- ws %>% subset(select = - c(CollarID, day, moonilumination))
+
+# Adding "timelag" column - time between each sampling occasion
+ws <- ws %>% 
+  group_by(TierID) %>% 
+  mutate(timelag = as.integer(difftime(lead(DatetimeUTC), DatetimeUTC, units = "secs"))) %>% 
+  ungroup()
+
+# Focusing only on these 5 individuals having a sampling interval of 60 seconds
+ws <- ws %>% filter(TierID %in% c(10, 22, 36, 40, 48)) 
+
+# rounding datetime to minutes for easier detection of meetups
+ws <- ws %>% mutate(dt_rounded = round_date(DatetimeUTC, unit = "minute"))
+
+# filter to 60 seconds interval
+ws <- ws %>% filter(timelag >= 50 & timelag < 70)
+
+head(ws)
+```
+  
+  
+### Visualization of meet-ups between Caroline and Olga
+  
+  
+To visualize the meeting occasions, we joined the data of Caroline and Olga by time.
+  
+  
+```{r}
+# filtering for Miriam and Olga
+ws_caroline <- ws %>% filter(TierID == 10)
+ws_olga     <- ws %>% filter(TierID == 36)
+
+# joining the data of Olga and Miriam and detect meet ups by a threshold of 30 meters
+ws_caroline_olga_join <- inner_join(ws_caroline, ws_olga, by = "dt_rounded", suffix = c("_caroline", "_olga")) %>% 
+                 mutate(distance = sqrt((E_caroline - E_olga)^2 + (N_caroline - N_olga)^2), meet = distance < 30)
+
+```
+  
+  
+#### Plot to visualize points of meet-ups
+  
+  
+In this plot we visualized all the spatio-temporal meeting occasions between Olga and Caroline.
+  
+  
+```{r}
+ggplot() +
+  geom_point(data = ws_caroline, aes(x = E, y = N, color = TierName),  alpha = 0.1, size = 0.5) +
+  geom_point(data = ws_olga, aes(x = E, y = N, color = TierName), alpha = 0.1, size = 0.5) +
+  geom_point(data = ws_caroline_olga_join %>%  filter(meet == TRUE), aes(x = E_caroline, y = N_caroline, fill = TierName_caroline), pch = 21, color = "black") +
+  geom_point(data = ws_caroline_olga_join %>%  filter(meet == TRUE), aes(x = E_olga, y = N_olga, fill = TierName_olga), pch = 21, color = "black") +
+  ggtitle("Meeting points between Caroline & Olga")
+```
+  
+  
+#### Plotting Trajectories before and after meet-up (+/- 6 minutes)
+  
+  
+Knowing the points where Caroline and Olga met, we then extracted the point fixes six minutes before and after each point and stored them in a separate variable for each of the three meetings. The six minutes were chosen arbitrarily, however, we found that six minutes suit well to depict the trajectories. 
+  
+  
+```{r}
+# extracting the points before and after meet-up (+/- 6 minutes)
+ws_caroline_olga_join <- ws_caroline_olga_join %>% mutate(
+  #
+  mMinus6 = shift(meet, 6, type = "lead"),
+  mMinus5 = shift(meet, 5, type = "lead"),
+  mMinus4 = shift(meet, 4, type = "lead"),
+  mMinus3 = shift(meet, 3, type = "lead"),
+  mMinus2 = shift(meet, 2, type = "lead"),
+  mMinus1 = shift(meet, 1, type = "lead"),
+  mPlus1  = shift(meet, 1, type = "lag"),
+  mPlus2  = shift(meet, 2, type = "lag"),
+  mPlus3  = shift(meet, 3, type = "lag"),
+  mPlus4  = shift(meet, 4, type = "lag"),
+  mPlus5  = shift(meet, 5, type = "lag"),
+  mPlus6  = shift(meet, 6, type = "lag"),
+  #
+)
+
+# filtering for all points, where at least one of the columns for +/- 6 minutes contains a TRUE
+meet_traj <- ws_caroline_olga_join %>% filter( mMinus6 + mMinus5 + mMinus4 + mMinus3 + mMinus2 + mMinus1 + 
+                                                 mPlus1 + mPlus2 + mPlus3 + mPlus4 + mPlus5 + mPlus6  >  0)
+
+# setting session timezone to UTC (doesn't work otherwise)
+Sys.setenv(TZ = "UTC")
+
+# splitting up each meeting occasion
+occasion1 <- meet_traj %>% filter(dt_rounded > "2015-09-20 05:00:00 UTC" & dt_rounded < "2015-09-20 06:00:00 UTC")
+occasion2 <- meet_traj %>% filter(dt_rounded > "2015-09-20 18:00:00 UTC" & dt_rounded < "2015-09-20 21:00:00 UTC")
+occasion3 <- meet_traj %>% filter(dt_rounded > "2015-09-20 19:00:00 UTC" & dt_rounded < "2015-09-20 20:00:00 UTC")
+
+# resetting session timezone
+Sys.setenv(TZ = "")
+```
+
+```{r, warning=FALSE, message=FALSE}
+# Occasion 1
+ggplot(data = occasion1) +
+  geom_path(aes(x = E_caroline, y = N_caroline, fill = TierName_caroline), color = "red") +
+  geom_path(aes(x = E_olga, y = N_olga, fill = TierName_olga), color = "cyan") +
+  geom_point(aes(x = E_caroline, y = N_caroline, fill = TierName_caroline), pch = 21, color = "black") +
+  geom_point(aes(x = E_olga, y = N_olga, fill = TierName_olga), pch = 21, color = "black") +
+  geom_text(aes(x = E_caroline, y = N_caroline, label = rownames(occasion1)), nudge_x = -0.5, nudge_y = 4, check_overlap = TRUE, color = "darkred") +
+  geom_text(aes(x = E_olga, y = N_olga, label = rownames(occasion1)), nudge_x = -0.5, nudge_y = -4, check_overlap = TRUE, color = "darkblue") +
+  ggtitle("Trajectories of first meeting event - 2015-09-20 05:00:00 UTC") +
+  xlab("E") + ylab("N") + scale_fill_discrete(name = " ")
+
+```
+
+```{r, warning=FALSE, message=FALSE}
+# Occasion 2
+ggplot(data = occasion2) +
+  geom_path(aes(x = E_caroline, y = N_caroline, fill = TierName_caroline), color = "red") +
+  geom_path(aes(x = E_olga, y = N_olga, fill = TierName_olga), color = "cyan") +
+  geom_point(aes(x = E_caroline, y = N_caroline, fill = TierName_caroline), pch = 21, color = "black") +
+  geom_point(aes(x = E_olga, y = N_olga, fill = TierName_olga), pch = 21, color = "black") +
+  geom_text(aes(x = E_caroline, y = N_caroline, label = rownames(occasion2)), nudge_x = 2, nudge_y = 2, check_overlap = TRUE, color = "darkred") +
+  geom_text(aes(x = E_olga, y = N_olga, label = rownames(occasion2)), nudge_x = -5, nudge_y = 2, check_overlap = TRUE, color = "darkblue") +
+  ggtitle("Trajectories of second meeting event - 2015-09-20 18:00:00 UTC") +
+  xlab("E") + ylab("N") + scale_fill_discrete(name = " ")
+
+```
+
+```{r, warning=FALSE, message=FALSE}
+# Occasion 3
+ggplot(data = occasion3) +
+  geom_path(aes(x = E_caroline, y = N_caroline, fill = TierName_caroline), color = "red") +
+  geom_path(aes(x = E_olga, y = N_olga, fill = TierName_olga), color = "cyan") +
+  geom_point(aes(x = E_caroline, y = N_caroline, fill = TierName_caroline), pch = 21, color = "black") +
+  geom_point(aes(x = E_olga, y = N_olga, fill = TierName_olga), pch = 21, color = "black") +
+  geom_text(aes(x = E_caroline, y = N_caroline, label = rownames(occasion3)), nudge_x = 0.5, nudge_y = 3, check_overlap = TRUE, color = "darkred") +
+  geom_text(aes(x = E_olga, y = N_olga, label = rownames(occasion3)), nudge_x = -2, nudge_y = 2, check_overlap = TRUE, color = "darkblue") +
+  ggtitle("Trajectories of third meeting event - 2015-09-20 19:00:00 UTC") +
+  xlab("E") + ylab("N") + scale_fill_discrete(name = " ")
+
+```
+  
+  
+In these plots we can see from where each wild boar came from, starting at the point labeled with "1". Further, we can see that Caroline and Olga met very closely in all three occasions. This can be seen in each plot where the same numbers of each individual are very close to each other, which means they were at the same location at the same time. It appears that these two females do not show any aggression, as no immediate change in the trajectories can bee seen that would hint on territorial behaviour. Moreover, it seems that they know each other, as the trajectories appear to show attraction instead of repulsion, and they stay close to each other for some time in meetings two and three. Based on the previous analysis on their territories, it may be possible that Caroline and Olga are from the same family, as their core territories are in neighboring cells.  
+  
+  
+  
+  
+  
+  
+## Discussion
+  
+  
+All in all, our methods worked well and produced useful results for the analysis of territories and territorial behaviour. A big advantage of the cell structure we chose is that we can answer multiple multiple questions within the same framework, creating the possibility to easily compare and develop multiple approaches for an analysis. Also, the grid structure can serve as a good tool for quantitative analytics. A difficulty, however, was to decide for appropriate cell sizes or thresholds to define a meeting occasion. By incorporating the *st_join* function from the "sf" package, we can easily match the spatial data to the grid without any information loss. Therefore, many more approaches become possible and can be explored to answer different question regarding territoriality, habitat use or activity patterns, for example.
+  
+To answer our first research question, whether we can identify core territories of individual wild boar, we developed two approaches: The first one depicting the absolute number of GPS-points sampled in each grid cell ("occurrence"), and the second one depicting how often a wild boar returns to a specific cell ("recurrence"). Although showing similar results, the actual meaning of these approaches differs. The occurrence plots nicely show in which area the animals move frequently and resembles a Kernel-density plot. The recurrence approach on the other hand can be very useful to detect the resting sites or main feeding grounds of the individuals. We found, as expected based on literature, that males have a larger territory than females. Also, the territories of the 3 females overlap strongly and even the resting sites appear to be very close to each other. This lead us to conclude that the females indeed do not show territorial behaviour among each other. Males, however, seem to avoid each other more than females. The territories overlap a in some parts, but the pattern of their activity seems to differ spatially and hints on strong territoriality. Further, it may be that in the overlapping area, males avoid each other in a temporal manner. The main resting and feeding sites of the males, contrasting the pattern observed for females, are far apart from each other, even separated by a river. The size of the feeding and resting territories in general are influenced by social behaviour, as well as by competing access to breeding grounds (Spitz and Janeau, 1990). As a rule, the territories of males are larger than those of females. It is interesting to see that the territories of females largely overlap and those of males do not. According to Servanty et al. (2007), this is due to the social nature of the wild boar, with females being more likely to live in a family structure than males. Male wild boars are apparently more exclusive and co-curate with each other (Servanti et al. 2007). 
+  
+The distinction of forest and non-forest habitat further helped to identify the core territories and feeding grounds, above shown by the example of Caroline. Additionally, it the plot shows that Carolines resting place is not only in the forest, but rather in the marshlands by the lake. Therefore, the inclusion of habitat information can add a lot of context to the territorial analysis and helps drawing conclusions about the behaviour of the animals.
+  
+To answer whether we can detect territorial behaviour using trajectories we first extracted all the meeting occasions between the selected individuals. We set the threshold to 30 meters to accept two spatially close points as a meeting occasion. This was selected because we thought 30 meters may be around the maximal distance to trigger territorial behaviour on sighting. However, other distances may be more reasonable. Unfortunately, the only meet-ups we detected within a reasonable distance were between two females, Olga and Caroline. As males are usually territorial, it would have been interesting to see whether it was possible to observe the behaviour with our method. However, with the example of Olga and Caroline, we were able to demonstrate the method and we may indeed be able to detect changes in the trajectory before or after a meeting occasion. Olga and Caroline met three times, and the trajectories appear to be directed towards each other, leading to the conclusion that these two females likely tolerate each other and are familiar. Meetings two and three seem to show that they even spent some time in close proximity together. Therefore, we concluded that we did not observe any territorial behaviour between these two females. This finding is supported by the fact that these two females have resting grounds close to each other in the recurrence analysis. However, regarding the methods, there is a restriction on the data that can be used for this analysis. It is necessary to have GPS points sampled within a relatively short time. Otherwise, such behavioural expressions in territoriality might easily be overseen.
+  
+  
+  
+## Conclusions
+  
+  
+We conclude that the methods we used in this analysis are suitable to analyse aspects of territoriality in animals that were tracked with GPS collars. Interactive maps also seem to be an appropriate way to visually analyse and compare territories among animals, as shown with our wild boar data. The main conclusion we draw, however, is the usefulness of the implemented grid structure, as it allowed us to use different methods to answer similar questions, using only one framework. Many other metrics can be implemented within this framework, making the analysis of such data easier and in a way exploratory to find new, interesting patterns regarding territories. In this project we demonstrated two such approaches. "Occurrences" showed the amount of GPS points sampled within a grid cell, giving an insight about which areas are visited in which frequency and also the time spent in it. As stated in literature, we too found that males have a larger territory than females, and that female territories can overlap, while males express more territoriality. The "Recurrence" analysis nicely showed the revisiting rate of each cell and gives information about where the animal roosts or feeds regularly. For example, this can be useful to locate an animals shelter or where to implement management actions to protect farmlands. In the last analysis we looked at trajectories around meeting occasions. We can observe how the behaviour of an individual changes after getting near a conspecific, giving us a method to observe behavioural patterns connected to territoriality. A requirement to do so, however, is the availability of high resolution sampling GPS data.
+  
+  
+  
+  
+## Sources
+  
+  
+Calenge, C., Maillard, D., Fournier, P., Fouque, C., 2004. Efficiency of spreading maize in the garrigues to reduce wild boar (Sus scrofa) damage to Mediterranean vineyards. Eur. J. Wildl. Res. 50, 112–120. https://doi.org/10.1007/s10344-004-0047-y
+
+Dardaillon, M., 1986. Seasonal variations in habitat selection and spatial distribution of wild boar (Sus Scrofa) in the Camargue, Southern France. Behav. Processes 13, 251–268. https://doi.org/10.1016/0376-6357(86)90088-4
+
+Rutten, A., Casaer, J., Strubbe, D., Leirs, H., 2020. Agricultural and landscape factors related to increasing wild boar agricultural damage in a highly anthropogenic landscape. Wildlife Biol. 2020. https://doi.org/10.2981/wlb.00634
+
+Servanty S (2007) Dynamique d’une population chassèe de sangliers (Sus scrofa scrofa) en milieu forestestier. Thése de doctorat, Universitè Claude Bernard Lyon1
+
+Scillitani, L., Toso, S., 2010. Do intensive drive hunts affect wild boar ( Sus scrofa ) spatial behaviour in Italy? Some evidences and management implications 307–318. https://doi.org/10.1007/s10344-009-0314-z
+
+Spitz, F., Janeau, G., 1990. Spatial strategies: an attempt to classify daily movements of wild boar. Acta Theriol. (Warsz). 35, 129–149. https://doi.org/10.4098/at.arch.90-14
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
