@@ -1,4 +1,8 @@
 
+```{r, echo = FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+```
+
 # **Territorial Analysis of Wild Boar Trajectory Data**  
 ## **Project for GEO880, Patterns and Trends in Environmental Data - Computational Movement Analysis**  
 ### Silvia Juen & Ramon Sager, 03.07.2022  
@@ -32,7 +36,7 @@ Wild boars in the region above Lake Neuchâtel were tracked using GPS trackers. 
   
 Additionally, at the beginning we created the variable "timelag", which represents the time between each sampling occasion. Furthermore, we used data from the Geopackage "Feldaufnahmen_Fanel.gpkg", where spatial properties were mapped. We extracted forest polygons to distinct between forest habitats (retreat habitat) and non-forest habitats, where wild boar usually feed. 
   
-  
+
   
   
 ## Methods and Results
@@ -83,7 +87,7 @@ n_distinct(ws$TierID)                       # 19 Wild Boar
 ```
 
   
-Then, the variable "timelag" was created and inspected to recieve information about the time between each sampling point.
+Then, the variable "timelag" was created and inspected to recieve information about the time between each sampling point. Here the summary statistics of timelag:
   
 
 ```{r}
@@ -95,6 +99,11 @@ ws <- ws %>%
 
 summary(ws$timelag)                         # 19 NA's because of 19 distinct ID's
 ```  
+
+
+And head() of timelag:
+
+
 ```{r}
 head(ws)
 ```
@@ -115,7 +124,8 @@ sampling_intervals <- ws %>% ggplot(aes(x = DatetimeUTC, y = TierID, colour = Ti
 sampling_intervals  
 ```
 
-```{r, results='hold'}
+
+```{r,include=FALSE}
 range(ws$timelag, na.rm = T)    # range of values in timelag
 nrow(ws)                        # number of observations
 
@@ -231,8 +241,6 @@ ggplot(mcp, ) +
   
 Overlapping convex-hulls among wild boar in question, except for individual with ID 48. Also, the sizes of the convex hulls apparently differ among sexes (40 & 48 are males). As expected, females seem to overlap, while the males are rather territorial.  
   
-  
-#### Transforming to SF object and adding Sex to data set from metadata
 
 
 ```{r}
@@ -267,7 +275,7 @@ f_mcp <- st_convex_hull(f_smry)
 ```
 
 
-#### MCP of all Males
+##### MCP of all Males:
 ```{r, warning=F, message=F}
 tmap_mode("view") # open in viewer for interactive map
 
@@ -283,7 +291,7 @@ mcp_males
 ```
 
 
-#### MCP of all Females
+##### MCP of all Females:
 ```{r, warning=F, message=F}
 #females 
 mcp_females <- tm_shape(underl_map) + 
@@ -324,7 +332,7 @@ At the beginning of the analysis of territoriality, we remove all the data proce
 rm(list=ls())
 ```
 
-```{r}
+```{r, include=FALSE}
 # reloading the Wild Boar data
 ws <- wildschwein_BE                        # complete Dataset of Wild Boar
 metadata <- wildschwein_metadata            # Wild Boar metadata
@@ -336,10 +344,6 @@ st_layers("Feldaufnahmen_Fanel.gpkg")
 forest <- read_sf("Feldaufnahmen_Fanel.gpkg")
 forest <- forest %>% filter(Frucht == "Wald")
 ```
-  
-  
-### Data Preparation
-  
   
   
 ```{r}
@@ -363,7 +367,7 @@ ws <- ws %>% filter(TierID %in% c(10, 22, 36, 40, 48))
 
 ```
 
-```{r}
+```{r, include=FALSE}
 ws_sf <- st_as_sf(ws,
                 coords = c("E", "N"), 
                 crs = 2056)
@@ -431,9 +435,7 @@ grid_agg_plots <- function(data, underl_map, Cellsize){
 }
 ```
 
-  
-### Running the function on all five individuals with 60 second sampling interval in one plot, using a cellsize of 150.
-  
+
   
 ```{r}
 plots <- grid_agg_plots(ws_sf, underl_map, 150)
@@ -467,7 +469,7 @@ arr_females
 ```
   
   
-In this plot we compare the females Caroline (10) & Miriam (22). We can see that the cells in which they were sampled most frequently overlap to some extent. This hints, as expected, on relaxed territoriality among these two females. Note that the area used by Caroline is much larger, which is most likely due to the prolonged time during which this female was sampled.
+In this plot we compared the females Caroline (10) & Miriam (22). We can see that the cells in which they were sampled most frequently overlap to some extent. This hints, as expected, on relaxed territoriality among these two females. Note that the area used by Caroline is much larger, which is most likely due to the prolonged time during which this female was sampled.
   
   
 ### plot animals with ID's: 40 (Franz) & 36 (Amos) (both males)
@@ -553,8 +555,6 @@ grid_join_plots <- function(data, underl_map, Cellsize){
 }
 ```
 
-
-### running the function on all individuals with 60 second sampling interval in one plot
 ```{r}
 plots <- grid_join_plots(ws_sf, underl_map, 150)
 ```
@@ -705,7 +705,7 @@ In this visualization we can see that the areas the two females use are very clo
 
   
   
-### plot animals with ID's: 40 (Franz, Blue) & 36 (Amos, Red) (both males)
+### Plot animals with ID's: 40 (Franz, Blue) & 36 (Amos, Red) (both males)
   
   
 ```{r}
@@ -842,7 +842,7 @@ ws <- wildschwein_BE                        # complete Dataset of Wild Boar
 metadata <- wildschwein_metadata            # Wild Boar metadata
 ```
 
-```{r}
+```{r, include=FALSE}
 # adding Sex and Study_area from metadata to the data set, removing unused columns
 ws <- merge(ws, metadata[, c("TierID","Sex")], by = "TierID")
 ws <- merge(ws, metadata[, c("TierID","Study_area")], by = "TierID")
